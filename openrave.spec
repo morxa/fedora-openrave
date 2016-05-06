@@ -2,9 +2,9 @@
 %global octave_distpkg %{?_vendor:%_vendor}%{?!_vendor:distributions}
 %global with_singleprecision %{?_with_singleprecision:1}%{?!_with_singleprecision:0}
 
-%global commit 9c48ee107c8d5103d52940cca5317bb428440993
+%global commit 0d603e205a2ddca80dc4386704865bbf53b8d53d
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
-%global checkout 20150703git%{shortcommit}
+%global checkout 20160503git%{shortcommit}
 
 # filter internal openrave plugins
 %global __provides_exclude_from ^%{_libdir}/openrave/plugins/.*
@@ -12,7 +12,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        5.%{checkout}%{?dist}
+Release:        6.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
@@ -224,6 +224,9 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %{python2_sitearch}/*
 
 %changelog
+* Tue May 03 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-6.20160503git0d603e2
+- Update to commit 0d603e2
+
 * Fri Jul 03 2015 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-5.20150703git9c48ee1
 - Update to commit 9c48ee1
 - Remove upstreamed pkgconfig patch

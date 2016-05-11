@@ -12,13 +12,19 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        6.%{checkout}%{?dist}
+Release:        7.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
 URL:            http://openrave.programmingvision.com
 
 Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-%{commit}.tar.gz
+
+# qhull changed their include path in F25
+# patch created with
+# grep -rIil --exclude-dir="3rdparty" "qhull/" * | \
+#   xargs sed -i "s/qhull\//libqhull\//g"
+Patch0:         openrave.qhull.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -114,6 +120,9 @@ developing applications that use %{name}.
 
 %prep
 %setup -q -n %{name}-%{commit}
+%if 0%{?fedora} >= 25
+%patch0 -p1
+%endif
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 
@@ -224,6 +233,9 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %{python2_sitearch}/*
 
 %changelog
+* Wed May 11 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-7.20160503git0d603e2
+- Add patch to fix qhull include path on F25
+
 * Tue May 03 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-6.20160503git0d603e2
 - Update to commit 0d603e2
 

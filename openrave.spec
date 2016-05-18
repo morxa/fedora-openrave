@@ -1,4 +1,3 @@
-%{!?octave_api: %define octave_api %(octave-config -p API_VERSION || echo 0)}
 %global octave_distpkg %{?_vendor:%_vendor}%{?!_vendor:distributions}
 %global with_singleprecision %{?_with_singleprecision:1}%{?!_with_singleprecision:0}
 
@@ -7,12 +6,13 @@
 %global checkout 20160503git%{shortcommit}
 
 # filter internal openrave plugins
-%global __provides_exclude_from ^%{_libdir}/openrave/plugins/.*
-%global __requires_exclude_from ^%{_libdir}/openrave/plugins/.*
+%global __provides_exclude_from ^%{_libdir}/openrave/plugins/.*$
+%global __requires_exclude_from ^%{_libdir}/openrave/plugins/.*$
+%global __requires_exclude ^libconfigurationcache\.so.*$
 
 Name:           openrave
 Version:        0.9.0
-Release:        7.%{checkout}%{?dist}
+Release:        9.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
@@ -25,6 +25,8 @@ Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-
 # grep -rIil --exclude-dir="3rdparty" "qhull/" * | \
 #   xargs sed -i "s/qhull\//libqhull\//g"
 Patch0:         openrave.qhull.patch
+Patch1:         openrave.gcc6.patch
+Patch2:         openrave.make_pair.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -120,6 +122,8 @@ developing applications that use %{name}.
 
 %prep
 %setup -q -n %{name}-%{commit}
+%patch1 -p1
+%patch2 -p1
 %if 0%{?fedora} >= 25
 %patch0 -p1
 %endif
@@ -233,6 +237,13 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %{python2_sitearch}/*
 
 %changelog
+* Tue May 17 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-9.20160503git0d603e2
+- Exclude libconfigurationcache from the required libs
+
+* Mon May 16 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-8.20160503git0d603e2
+- Add patch to fix all GCC 6.1 errors
+- Add patch to fix template instantiation in std::make_pair
+
 * Wed May 11 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-7.20160503git0d603e2
 - Add patch to fix qhull include path on F25
 

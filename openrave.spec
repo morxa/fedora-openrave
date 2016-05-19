@@ -135,6 +135,9 @@ rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,z
 mkdir build
 pushd build
 
+# only add shlib dependency if it is actually used
+# see https://fedoraproject.org/wiki/Common_Rpmlint_issues#unused-direct-shlib-dependency
+export CXXFLAGS="%{optflags} -Wl,--as-needed"
 %cmake \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON \
@@ -239,6 +242,7 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %changelog
 * Tue May 17 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-9.20160503git0d603e2
 - Exclude libconfigurationcache from the required libs
+- Fix CXXFLAGS to only link against dependencies that are actually used
 
 * Mon May 16 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-8.20160503git0d603e2
 - Add patch to fix all GCC 6.1 errors

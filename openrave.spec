@@ -1,9 +1,9 @@
 %global octave_distpkg %{?_vendor:%_vendor}%{?!_vendor:distributions}
 %global with_singleprecision %{?_with_singleprecision:1}%{?!_with_singleprecision:0}
 
-%global commit 0d603e205a2ddca80dc4386704865bbf53b8d53d
+%global commit 2baf4e38600b7540433ef05d3022d31d5f946035
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
-%global checkout 20160503git%{shortcommit}
+%global checkout 20160519git%{shortcommit}
 
 # filter internal openrave plugins
 %global __provides_exclude_from ^%{_libdir}/openrave/plugins/.*$
@@ -12,7 +12,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        9.%{checkout}%{?dist}
+Release:        10.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
@@ -25,8 +25,6 @@ Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-
 # grep -rIil --exclude-dir="3rdparty" "qhull/" * | \
 #   xargs sed -i "s/qhull\//libqhull\//g"
 Patch0:         openrave.qhull.patch
-Patch1:         openrave.gcc6.patch
-Patch2:         openrave.make_pair.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -122,8 +120,6 @@ developing applications that use %{name}.
 
 %prep
 %setup -q -n %{name}-%{commit}
-%patch1 -p1
-%patch2 -p1
 %if 0%{?fedora} >= 25
 %patch0 -p1
 %endif
@@ -240,6 +236,10 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %{python2_sitearch}/*
 
 %changelog
+* Thu May 19 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-10.20160519git2baf4e3
+- Update to newest upstream commit 2baf4e3
+- Remove patches that were included upstream
+
 * Tue May 17 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-9.20160503git0d603e2
 - Exclude libconfigurationcache from the required libs
 - Fix CXXFLAGS to only link against dependencies that are actually used

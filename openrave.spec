@@ -12,7 +12,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        10.%{checkout}%{?dist}
+Release:        11.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
@@ -32,6 +32,13 @@ ExcludeArch: %{arm}
 
 # models are in a separate noarch package
 Requires:       %{name}-models = %{version}-%{release}
+
+# bundled libraries
+# upstream projects are dead
+# convexdecomposition is taken from SVN
+# no version information could be found for ivcon
+Provides:       bundled(convexdecomposition) = svn3
+Provides:       bundled(ivcon) = 0
 
 BuildRequires:  cmake
 BuildRequires:  python2-devel
@@ -236,6 +243,9 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %{python2_sitearch}/*
 
 %changelog
+* Thu May 19 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-11.20160519git2baf4e3
+- Add Provides: for bundled libraries
+
 * Thu May 19 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-10.20160519git2baf4e3
 - Update to newest upstream commit 2baf4e3
 - Remove patches that were included upstream

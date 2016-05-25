@@ -12,7 +12,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        11.%{checkout}%{?dist}
+Release:        13.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
@@ -25,6 +25,19 @@ Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-
 # grep -rIil --exclude-dir="3rdparty" "qhull/" * | \
 #   xargs sed -i "s/qhull\//libqhull\//g"
 Patch0:         openrave.qhull.patch
+# A bug in the cmake config causes a symlink creation
+# /usr/bin/openrave -> /usr/bin/openrave
+Patch1:         openrave.fix-dead-symlink.patch
+# Fix openrave issue #323
+Patch2:         openrave.spatialtree.patch
+# Parameters of the declaration and definition of the function don't match
+Patch3:         openrave.fix-checkramp-parameter-mismatch.patch
+# The SubParabolicSmoother's implementation is buggy and was therefore removed
+# from the library librplanners. However, it was still referenced in the
+# interface, causing undefined reference errors.
+Patch4:         openrave.remove-subparabolicsmoother.patch
+# Remove missing implementation for a function in the configuration cache.
+Patch5:         openrave.fix-configurationcache-update-free-configurations.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -130,6 +143,11 @@ developing applications that use %{name}.
 %if 0%{?fedora} >= 25
 %patch0 -p1
 %endif
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 
@@ -243,6 +261,16 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %{python2_sitearch}/*
 
 %changelog
+* Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-13.20160519git2baf4e3
+- Add patch to remove the SubParabolicSmoother
+- Add patch for missing function definition in libconfigurationcache
+
+* Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-12.20160519git2baf4e3
+- Add patch to fix dead symlink /usr/bin/openrave -> /usr/bin/openrave
+- Add workaround patch for openrave issue #323
+- Add patch for mismatching signature in function declaration/definition in
+  librplanners
+
 * Thu May 19 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-11.20160519git2baf4e3
 - Add Provides: for bundled libraries
 

@@ -7,12 +7,11 @@
 
 # filter internal openrave plugins
 %global __provides_exclude_from ^%{_libdir}/openrave/plugins/.*$
-%global __requires_exclude_from ^%{_libdir}/openrave/plugins/.*$
 %global __requires_exclude ^libconfigurationcache\.so.*$
 
 Name:           openrave
 Version:        0.9.0
-Release:        13.%{checkout}%{?dist}
+Release:        14.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
@@ -261,6 +260,9 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %{python2_sitearch}/*
 
 %changelog
+* Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-14.20160519git2baf4e3
+- Also compute requirements of plugins (remove __requires_exclude_from)
+
 * Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-13.20160519git2baf4e3
 - Add patch to remove the SubParabolicSmoother
 - Add patch for missing function definition in libconfigurationcache

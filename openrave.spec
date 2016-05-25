@@ -26,9 +26,14 @@ Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-
 Patch0:         openrave.qhull.patch
 # A bug in the cmake config causes a symlink creation
 # /usr/bin/openrave -> /usr/bin/openrave
+# sent upstream: https://github.com/rdiankov/openrave/pull/404
 Patch1:         openrave.fix-dead-symlink.patch
 # Fix openrave issue #323
+# This is only a workaround until upstream finds a proper fix.
 Patch2:         openrave.spatialtree.patch
+
+# The following patches are sent upstream:
+# https://github.com/rdiankov/openrave/pull/403
 # Parameters of the declaration and definition of the function don't match
 Patch3:         openrave.fix-checkramp-parameter-mismatch.patch
 # The SubParabolicSmoother's implementation is buggy and was therefore removed

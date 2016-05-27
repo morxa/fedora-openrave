@@ -55,7 +55,7 @@ Requires:       %{name}-models = %{version}-%{release}
 # convexdecomposition is taken from SVN
 # no version information could be found for ivcon
 Provides:       bundled(convexdecomposition) = svn3
-Provides:       bundled(ivcon) = 0
+Provides:       bundled(ivcon)
 
 BuildRequires:  cmake
 BuildRequires:  python2-devel

@@ -164,7 +164,6 @@ pushd build
 # see https://fedoraproject.org/wiki/Common_Rpmlint_issues#unused-direct-shlib-dependency
 export CXXFLAGS="%{optflags} -Wl,--as-needed"
 %cmake \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON \
   -DOPT_VIDEORECORDING=OFF \
 %if %{with_singleprecision}
@@ -182,7 +181,6 @@ export CXXFLAGS="%{optflags} -Wl,--as-needed"
   -DOPENRAVE__INSTALL_ABSOLUTE_DIR="%{_datadir}/openrave" \
   -DOPENRAVE_OCTAVE_INSTALL_DIR="%{_libexecdir}/octave/packages/openrave-%{version}" \
   -DCPACK_PACKAGE_INSTALL_DIRECTORY:STRING="openrave" \
-  -DBASH_COMPLETION_DIR="%{_sysconfdir}/bash_completion.d" \
   ..
 
 # Having version at this level should be fine, otherwise could use:
@@ -212,11 +210,11 @@ find %{buildroot} -name '*.la' -exec rm -f {} ';'
 # delete backup files of unclean patching
 rm -rf %{buildroot}%{_datadir}/%{name}/models/barrett/.~
 
-# copy bash completion. Leave the file in /usr/share/openrave as it is sourced
+# symlink bash completion. Leave the file in /usr/share/openrave as it is sourced
 # from openrave.bash, which expects it to be there
-mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d
-cp %{buildroot}%{_datadir}/%{name}/openrave_completion.bash \
-  %{buildroot}%{_sysconfdir}/bash_completion.d/%{name}.bash
+mkdir -p %{buildroot}%{_datadir}/bash-completion/completions
+ln -s %{_datadir}/%{name}/openrave_completion.bash \
+  %{buildroot}%{_datadir}/bash-completion/completions/%{name}.bash
 
 # Included in license tag, do not install second time
 rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICENSE.*
@@ -230,7 +228,7 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %files
 %license AUTHORS COPYING LICENSE.apache LICENSE.lgpl
 %{_bindir}/openrave
-%config(noreplace) %{_sysconfdir}/bash_completion.d/%{name}.bash
+%{_datadir}/bash-completion/completions/%{name}.bash
 %{_libdir}/*.so.*
 %{_libdir}/openrave
 %dir %{_datadir}/%{name}

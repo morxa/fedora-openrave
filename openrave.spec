@@ -17,7 +17,7 @@ Summary:        Open Robotics Automation Virtual Environment
 License:        LGPLv3+ and ASL 2.0
 URL:            http://openrave.programmingvision.com
 
-Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-%{commit}.tar.gz
+Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-%{shortcommit}.tar.gz
 
 # qhull changed their include path in F25
 # patch created with
@@ -96,7 +96,7 @@ scripting and control.
 
 %package        devel
 Summary:        Development files for %{name}
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}%{?_isa} = %{version}-%{release}
 
 %description    devel
 The %{name}-devel package contains libraries and header files for
@@ -122,7 +122,7 @@ The %{name}-doc package contains documentation for %{name}.
 
 %package -n     python2-%{name}
 Summary:        Python2 bindings for OpenRAVE
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       flann-python
 Requires:       sympy
 
@@ -134,7 +134,7 @@ developing applications that use %{name}.
 %package        octave
 Summary:        Octave bindings for OpenRAVE
 Group:          Development/Languages
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       octave(api) = %{octave_api}
 
 %description    octave

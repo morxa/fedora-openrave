@@ -209,14 +209,14 @@ find %{buildroot} -type f -name '*.la' -delete
 # delete backup files of unclean patching
 rm -rf %{buildroot}%{_datadir}/%{name}/models/barrett/.~
 
-# symlink bash completion. Leave the file in /usr/share/openrave as it is sourced
-# from openrave.bash, which expects it to be there
-mkdir -p %{buildroot}%{_datadir}/bash-completion/completions
-ln -s %{_datadir}/%{name}/openrave_completion.bash \
-  %{buildroot}%{_datadir}/bash-completion/completions/%{name}.bash
-
 # Included in license tag, do not install second time
 rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICENSE.*
+
+# Move bash completion to the right location
+mkdir -p %{buildroot}%{_datadir}/bash-completion/completions/
+mv %{buildroot}%{_datadir}/%{name}/openrave_completion.bash \
+  %{buildroot}%{_datadir}/bash-completion/completions/%{name}.bash
+
 
 
 %post -p /sbin/ldconfig
@@ -231,8 +231,6 @@ rm %{buildroot}%{_datadir}/%{name}/COPYING %{buildroot}%{_datadir}/%{name}/LICEN
 %{_libdir}/*.so.*
 %{_libdir}/openrave
 %dir %{_datadir}/%{name}
-%{_datadir}/%{name}/openrave.bash
-%{_datadir}/%{name}/openrave_completion.bash
 
 %files models
 %license AUTHORS COPYING LICENSE.apache LICENSE.lgpl

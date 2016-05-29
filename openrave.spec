@@ -221,6 +221,9 @@ mkdir -p %{buildroot}%{_datadir}/bash-completion/completions/
 mv %{buildroot}%{_datadir}/%{name}/openrave_completion.bash \
   %{buildroot}%{_datadir}/bash-completion/completions/%{name}.bash
 
+# remove openrave.bash which is used to set up paths for custom installs and is
+# useless for a systemwide install
+rm -f %{buildroot}%{_datadir}/%{name}/openrave.bash
 
 %find_lang %{name}
 %find_lang %{name}_plugins_configurationcache

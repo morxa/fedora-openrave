@@ -226,6 +226,9 @@ mv %{buildroot}%{_datadir}/%{name}/openrave_completion.bash \
 # useless for a systemwide install
 rm -f %{buildroot}%{_datadir}/%{name}/openrave.bash
 
+# rename openrave-createplugin.py
+mv %{_bindir}/openrave-createplugin.py %{_bindir}/openrave-createplugin
+
 %find_lang %{name}
 %find_lang %{name}_plugins_configurationcache
 %find_lang %{name}_plugins_ikfastsolvers
@@ -253,7 +256,7 @@ rm -f %{buildroot}%{_datadir}/%{name}/openrave.bash
 
 %files devel
 %{_bindir}/openrave-config
-%{_bindir}/openrave-createplugin.py
+%{_bindir}/openrave-createplugin
 %{_includedir}/*
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*

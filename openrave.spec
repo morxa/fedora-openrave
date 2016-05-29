@@ -1,7 +1,7 @@
 %global octave_distpkg %{?_vendor:%_vendor}%{?!_vendor:distributions}
 %global with_singleprecision %{?_with_singleprecision:1}%{?!_with_singleprecision:0}
 
-%global commit 2baf4e38600b7540433ef05d3022d31d5f946035
+%global commit 8bfb8a6a96d5606b663436495983b0605f251f60
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 %global checkout git%{shortcommit}
 
@@ -24,25 +24,14 @@ Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-
 # grep -rIil --exclude-dir="3rdparty" "qhull/" * | \
 #   xargs sed -i "s/qhull\//libqhull\//g"
 Patch0:         openrave.qhull.patch
-# A bug in the cmake config causes a symlink creation
-# /usr/bin/openrave -> /usr/bin/openrave
-# sent upstream: https://github.com/rdiankov/openrave/pull/404
-Patch1:         openrave.fix-dead-symlink.patch
+# CMakelists uses relative paths to /usr. We want to use macros for _bindir
+# etc., so make the paths absolute instead.
+# This fixes a bug where openrave-config would return /usr/usr/lib64/openrave
+# instead of /usr/lib64/openrave.
+Patch1:         openrave.fix-abs-paths.patch
 # Fix openrave issue #323
 # This is only a workaround until upstream finds a proper fix.
 Patch2:         openrave.spatialtree.patch
-
-# The following patches are sent upstream:
-# https://github.com/rdiankov/openrave/pull/403
-# Parameters of the declaration and definition of the function don't match
-Patch3:         openrave.fix-checkramp-parameter-mismatch.patch
-# The SubParabolicSmoother's implementation is buggy and was therefore removed
-# from the library librplanners. However, it was still referenced in the
-# interface, causing undefined reference errors.
-Patch4:         openrave.remove-subparabolicsmoother.patch
-# Remove missing implementation for a function in the configuration cache.
-Patch5:         openrave.fix-configurationcache-update-free-configurations.patch
-Patch6:         openrave.fix-abs-paths.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -152,10 +141,6 @@ developing applications that use %{name}.
 %endif
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 
@@ -276,11 +261,12 @@ mv %{_bindir}/openrave-createplugin.py %{_bindir}/openrave-createplugin
 %{python2_sitearch}/*
 
 %changelog
-* Sun May 29 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-15.git2baf4e3
+* Sun May 29 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-15.git8bfb8a6
 - Install locale files
 - Fix absolute path defs (e.g. /usr/usr/share -> /usr/share in openrave-config)
 - Remove unnecessary openrave.bash (not useful for a systemwide install)
 - openrave-devel requires python2-openrave
+- Remove upstreamed patches
 
 * Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-14.20160519git2baf4e3
 - Also compute requirements of plugins (remove __requires_exclude_from)

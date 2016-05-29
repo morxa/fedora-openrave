@@ -204,8 +204,8 @@ popd
 dos2unix AUTHORS
 
 %install
-make install DESTDIR=%{buildroot}
-find %{buildroot} -name '*.la' -exec rm -f {} ';'
+%make_install
+find %{buildroot} -type f -name '*.la' -delete
 # delete backup files of unclean patching
 rm -rf %{buildroot}%{_datadir}/%{name}/models/barrett/.~
 

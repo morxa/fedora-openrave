@@ -59,6 +59,7 @@ Provides:       bundled(convexdecomposition) = svn3
 Provides:       bundled(ivcon)
 
 BuildRequires:  cmake
+BuildRequires:  gettext
 BuildRequires:  python2-devel
 
 BuildRequires:  ann-devel
@@ -218,13 +219,18 @@ mv %{buildroot}%{_datadir}/%{name}/openrave_completion.bash \
   %{buildroot}%{_datadir}/bash-completion/completions/%{name}.bash
 
 
+%find_lang %{name}
+%find_lang %{name}_plugins_configurationcache
+%find_lang %{name}_plugins_ikfastsolvers
+%find_lang %{name}_plugins_oderave
+%find_lang %{name}_plugins_rplanners
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 
-%files
+%files -f %{name}.lang -f %{name}_plugins_configurationcache.lang -f %{name}_plugins_ikfastsolvers.lang -f %{name}_plugins_oderave.lang -f %{name}_plugins_rplanners.lang
 %license AUTHORS COPYING LICENSE.apache LICENSE.lgpl
 %{_bindir}/openrave
 %{_datadir}/bash-completion/completions/%{name}.bash

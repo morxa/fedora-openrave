@@ -42,6 +42,7 @@ Patch3:         openrave.fix-checkramp-parameter-mismatch.patch
 Patch4:         openrave.remove-subparabolicsmoother.patch
 # Remove missing implementation for a function in the configuration cache.
 Patch5:         openrave.fix-configurationcache-update-free-configurations.patch
+Patch6:         openrave.fix-abs-paths.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -152,6 +153,7 @@ developing applications that use %{name}.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 
@@ -171,22 +173,19 @@ export CXXFLAGS="%{optflags} -Wl,--as-needed"
 %endif
   -DOPENRAVE_BIN_SUFFIX="" \
   -DOPENRAVE_LIBRARY_SUFFIX="" \
-  -DOPENRAVE_SHARE_DIR:STRING="share/openrave" \
+  -DOPENRAVE_SHARE_ABSOLUTE_DIR:STRING="%{_datadir}/openrave" \
   -DOPENRAVE_CMAKE_INSTALL_DIR:STRING="openrave" \
-  -DOPENRAVE_DATA_INSTALL_DIR="%{_datadir}/openrave" \
   -DOPENRAVE_DATA_INSTALL_ABSOLUTE_DIR="%{_datadir}/openrave" \
-  -DOPENRAVE_PLUGINS_INSTALL_DIR="%{_libdir}/openrave/plugins" \
   -DOPENRAVE_PLUGINS_INSTALL_ABSOLUTE_DIR="%{_libdir}/openrave/plugins" \
   -DOPENRAVE_INCLUDE_INSTALL_DIR:STRING="openrave" \
-  -DOPENRAVE__INSTALL_ABSOLUTE_DIR="%{_datadir}/openrave" \
-  -DOPENRAVE_OCTAVE_INSTALL_DIR="%{_libexecdir}/octave/packages/openrave-%{version}" \
+  -DOPENRAVE_OCTAVE_INSTALL_ABSOLUTE_DIR="%{_libexecdir}/octave/packages/openrave-%{version}" \
   -DCPACK_PACKAGE_INSTALL_DIRECTORY:STRING="openrave" \
   ..
 
 # Having version at this level should be fine, otherwise could use:
 #  -DOPENRAVE_INCLUDE_DIRNAME="openrave"
 
-make %{?_smp_mflags}
+%make_build
 popd
 
 pushd docs

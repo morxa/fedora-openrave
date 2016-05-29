@@ -212,7 +212,7 @@ mv %{buildroot}%{_datadir}/%{name}/openrave_completion.bash \
 rm -f %{buildroot}%{_datadir}/%{name}/openrave.bash
 
 # rename openrave-createplugin.py
-mv %{_bindir}/openrave-createplugin.py %{_bindir}/openrave-createplugin
+mv %{buildroot}%{_bindir}/openrave-createplugin.py %{buildroot}%{_bindir}/openrave-createplugin
 
 %find_lang %{name}
 %find_lang %{name}_plugins_configurationcache

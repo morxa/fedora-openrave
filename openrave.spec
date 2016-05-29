@@ -174,11 +174,14 @@ export CXXFLAGS="%{optflags} -Wl,--as-needed"
 %endif
   -DOPENRAVE_BIN_SUFFIX="" \
   -DOPENRAVE_LIBRARY_SUFFIX="" \
+  -DOPENRAVE_SHARE_DIR:STRING="share/openrave" \
   -DOPENRAVE_SHARE_ABSOLUTE_DIR:STRING="%{_datadir}/openrave" \
   -DOPENRAVE_CMAKE_INSTALL_DIR:STRING="openrave" \
   -DOPENRAVE_DATA_INSTALL_ABSOLUTE_DIR="%{_datadir}/openrave" \
+  -DOPENRAVE_PLUGINS_INSTALL_DIR="%{_libdir}/openrave/plugins" \
   -DOPENRAVE_PLUGINS_INSTALL_ABSOLUTE_DIR="%{_libdir}/openrave/plugins" \
   -DOPENRAVE_INCLUDE_INSTALL_DIR:STRING="openrave" \
+  -DOPENRAVE_OCTAVE_INSTALL_DIR="%{_libexecdir}/octave/packages/openrave-%{version}" \
   -DOPENRAVE_OCTAVE_INSTALL_ABSOLUTE_DIR="%{_libexecdir}/octave/packages/openrave-%{version}" \
   -DCPACK_PACKAGE_INSTALL_DIRECTORY:STRING="openrave" \
   ..

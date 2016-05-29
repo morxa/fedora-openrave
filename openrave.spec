@@ -3,7 +3,7 @@
 
 %global commit 2baf4e38600b7540433ef05d3022d31d5f946035
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
-%global checkout 20160519git%{shortcommit}
+%global checkout git%{shortcommit}
 
 # filter internal openrave plugins
 %global __provides_exclude_from ^%{_libdir}/openrave/plugins/.*$
@@ -11,7 +11,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        14.%{checkout}%{?dist}
+Release:        15.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
@@ -276,6 +276,12 @@ mv %{_bindir}/openrave-createplugin.py %{_bindir}/openrave-createplugin
 %{python2_sitearch}/*
 
 %changelog
+* Sun May 29 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-15.git2baf4e3
+- Install locale files
+- Fix absolute path defs (e.g. /usr/usr/share -> /usr/share in openrave-config)
+- Remove unnecessary openrave.bash (not useful for a systemwide install)
+- openrave-devel requires python2-openrave
+
 * Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-14.20160519git2baf4e3
 - Also compute requirements of plugins (remove __requires_exclude_from)
 

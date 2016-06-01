@@ -11,7 +11,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        15.%{checkout}%{?dist}
+Release:        16.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0
@@ -32,6 +32,9 @@ Patch1:         openrave.fix-abs-paths.patch
 # Fix openrave issue #323
 # This is only a workaround until upstream finds a proper fix.
 Patch2:         openrave.spatialtree.patch
+# Patch to fix issues with newer ikfast and mpmath versions
+# Pull request: https://github.com/rdiankov/openrave/pull/407
+Patch3:         openrave.ikfast.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -141,6 +144,7 @@ developing applications that use %{name}.
 %endif
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 
@@ -214,18 +218,21 @@ rm -f %{buildroot}%{_datadir}/%{name}/openrave.bash
 # rename openrave-createplugin.py
 mv %{buildroot}%{_bindir}/openrave-createplugin.py %{buildroot}%{_bindir}/openrave-createplugin
 
-%find_lang %{name}
-%find_lang %{name}_plugins_configurationcache
-%find_lang %{name}_plugins_ikfastsolvers
-%find_lang %{name}_plugins_oderave
-%find_lang %{name}_plugins_rplanners
+# replace shebangs
+for file in $(grep -rIl "^#\!.*python" %{buildroot}) ; do
+  sed -i.orig "1s:^#\!.*python.*:#\!%{__python2}:" $file
+  touch -r $file.orig $file
+  rm $file.orig
+done
+
+%find_lang %{name} --all-name
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 
-%files -f %{name}.lang -f %{name}_plugins_configurationcache.lang -f %{name}_plugins_ikfastsolvers.lang -f %{name}_plugins_oderave.lang -f %{name}_plugins_rplanners.lang
+%files -f %{name}.lang
 %license AUTHORS COPYING LICENSE.apache LICENSE.lgpl
 %{_bindir}/openrave
 %{_datadir}/bash-completion/completions/%{name}.bash
@@ -261,6 +268,9 @@ mv %{buildroot}%{_bindir}/openrave-createplugin.py %{buildroot}%{_bindir}/openra
 %{python2_sitearch}/*
 
 %changelog
+* Wed Jun 01 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-16.git8bfb8a6
+- Add patch to fix problems with newer ikpath and mpmath versions
+
 * Sun May 29 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-15.git8bfb8a6
 - Install locale files
 - Fix absolute path defs (e.g. /usr/usr/share -> /usr/share in openrave-config)

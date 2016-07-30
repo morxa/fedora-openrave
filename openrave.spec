@@ -171,8 +171,8 @@ export CXXFLAGS="%{optflags} -Wl,--as-needed"
   -DOPENRAVE_PLUGINS_INSTALL_DIR="%{_libdir}/openrave/plugins" \
   -DOPENRAVE_PLUGINS_INSTALL_ABSOLUTE_DIR="%{_libdir}/openrave/plugins" \
   -DOPENRAVE_INCLUDE_INSTALL_DIR:STRING="openrave" \
-  -DOPENRAVE_OCTAVE_INSTALL_DIR="%{_libexecdir}/octave/packages/openrave-%{version}" \
-  -DOPENRAVE_OCTAVE_INSTALL_ABSOLUTE_DIR="%{_libexecdir}/octave/packages/openrave-%{version}" \
+  -DOPENRAVE_OCTAVE_INSTALL_DIR="%{octpkglibdir}" \
+  -DOPENRAVE_OCTAVE_INSTALL_ABSOLUTE_DIR="%{octpkglibdir}" \
   -DCPACK_PACKAGE_INSTALL_DIRECTORY:STRING="openrave" \
   ..
 
@@ -260,7 +260,7 @@ done
 %doc docs/build/en/coreapihtml/*
 
 %files octave
-%{_libexecdir}/octave/packages/*
+%{octpkglibdir}
 
 %files -n python2-%{name}
 %{_bindir}/openrave.py

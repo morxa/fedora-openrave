@@ -260,13 +260,13 @@ done
 %{_datadir}/bash-completion/completions/%{name}.bash
 %{_libdir}/*.so.*
 %{_libdir}/openrave
-%dir %{_datadir}/%{name}
 
 %files models
 %license AUTHORS COPYING LICENSE.apache LICENSE.lgpl
 %{_datadir}/%{name}/data
 %{_datadir}/%{name}/models
 %{_datadir}/%{name}/robots
+%dir %{_datadir}/%{name}
 
 %files devel
 %{_bindir}/openrave-config
@@ -277,6 +277,7 @@ done
 %{_libdir}/cmake/*
 %{_datadir}/%{name}/matlab
 %{_datadir}/%{name}/cppexamples
+%dir %{_datadir}/%{name}
 
 %files doc
 %doc docs/build/en/coreapihtml/*

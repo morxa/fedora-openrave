@@ -1,6 +1,3 @@
-%global octave_distpkg %{?_vendor:%_vendor}%{?!_vendor:distributions}
-%global with_singleprecision %{?_with_singleprecision:1}%{?!_with_singleprecision:0}
-
 %global commit 8bfb8a6a96d5606b663436495983b0605f251f60
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 %global checkout git%{shortcommit}
@@ -8,6 +5,9 @@
 # filter internal openrave plugins
 %global __provides_exclude_from ^%{_libdir}/openrave/plugins/.*$
 %global __requires_exclude ^libconfigurationcache\.so.*$
+
+%global with_singleprecision %{?_with_singleprecision:1}%{?!_with_singleprecision:0}
+%global octave_distpkg %{?_vendor:%_vendor}%{?!_vendor:distributions}
 
 Name:           openrave
 Version:        0.9.0
@@ -139,6 +139,8 @@ Requires:       octave(api) = %{octave_api}
 %description    octave
 The %{name}-octave package contains Octave bindings for
 developing applications that use %{name}.
+
+%global octpkg %{name}
 
 
 %prep

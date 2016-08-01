@@ -49,6 +49,10 @@ Requires:       %{name}-models = %{version}-%{release}
 # no version information could be found for ivcon
 Provides:       bundled(convexdecomposition) = svn3
 Provides:       bundled(ivcon)
+# Uses headers from bundled boost-numeric-bindings.
+# The bindings are not available in Fedora and this package uses an old and
+# incompatible version.
+Provides:       bundled(boost-numeric-bindings) = 1
 
 BuildRequires:  cmake
 BuildRequires:  gettext
@@ -200,6 +204,8 @@ dos2unix AUTHORS
 %install
 %make_install
 find %{buildroot} -type f -name '*.la' -delete
+# remove bundled boost libs
+rm -rf %{buildroot}/%{_libdir}/%{name}/plugins/include/boost
 # delete backup files of unclean patching
 rm -rf %{buildroot}%{_datadir}/%{name}/models/barrett/.~
 

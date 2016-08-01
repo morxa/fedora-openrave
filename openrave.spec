@@ -180,6 +180,7 @@ export CXXFLAGS="%{optflags} -Wl,--as-needed"
   -DOPENRAVE_OCTAVE_INSTALL_DIR="%{octpkglibdir}" \
   -DOPENRAVE_OCTAVE_INSTALL_ABSOLUTE_DIR="%{octpkglibdir}" \
   -DCPACK_PACKAGE_INSTALL_DIRECTORY:STRING="openrave" \
+  -DOPENRAVE_PLUGIN_QTOSGRAVE:BOOL="OFF" \
   ..
 
 # Having version at this level should be fine, otherwise could use:

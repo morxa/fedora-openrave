@@ -14,7 +14,7 @@ Version:        0.9.0
 Release:        16.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
-License:        LGPLv3+ and ASL 2.0
+License:        LGPLv3+ and ASL 2.0 and BSD
 URL:            http://openrave.programmingvision.com
 
 Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-%{shortcommit}.tar.gz
@@ -132,9 +132,9 @@ developing applications that use %{name}.
 
 %package        octave
 Summary:        Octave bindings for OpenRAVE
-Group:          Development/Languages
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       octave(api) = %{octave_api}
+License:        LGPLv3+ and ASL 2.0 and GPLv3+
 
 %description    octave
 The %{name}-octave package contains Octave bindings for

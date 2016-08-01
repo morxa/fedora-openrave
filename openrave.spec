@@ -11,7 +11,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        16.%{checkout}%{?dist}
+Release:        0.17.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
@@ -290,6 +290,13 @@ done
 %{python2_sitearch}/*
 
 %changelog
+* Mon Aug 01 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-0.17.git8bfb8a6
+- Change to prerelase versioning
+- Remove bundled boost libs
+- Add Provides: for bundled boost-numeric-bindings
+- Fix licenses
+- Disable qtosgrave plugin
+
 * Wed Jun 01 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-16.git8bfb8a6
 - Add patch to fix problems with newer ikpath and mpmath versions
 

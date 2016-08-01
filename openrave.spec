@@ -234,6 +234,19 @@ for file in $(grep -rIl "^#\!.*python" %{buildroot}) ; do
   rm $file.orig
 done
 
+# move header files from python_sitearch to includedir
+for filepath in $(find %{buildroot}/%{python2_sitearch} -type f -name "*.h")
+do
+  file=$(basename $filepath)
+  targetpath="%{buildroot}/%{_includedir}/%{name}/%{name}/$file"
+  if [ -e "$targetpath" ] ; then
+    echo "Tried to move python binding header $filepath to $targetpath, but "\
+          "file already exists"
+    exit 1
+  fi
+  mv $filepath $targetpath
+done
+
 %find_lang %{name} --all-name
 
 %post -p /sbin/ldconfig

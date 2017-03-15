@@ -1,4 +1,4 @@
-%global commit 8bfb8a6a96d5606b663436495983b0605f251f60
+%global commit 3fa55b84c3a6fa9d704f194ccb392db73f3024cd
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 %global checkout git%{shortcommit}
 
@@ -11,7 +11,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        0.17.%{checkout}%{?dist}
+Release:        0.20.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
@@ -249,6 +249,15 @@ done
 
 %find_lang %{name} --all-name
 
+
+%check
+export PYTHONPATH=%{buildroot}/%{python2_sitearch}
+export LD_LIBRARY_PATH=%{buildroot}/%{_libdir}
+export OPENRAVE_DATA=%{buildroot}/usr/share/openrave
+export OPENRAVE_PLUGINS=%{buildroot}/%{_libdir}/openrave/plugins
+%{__python2} test/run_tests.py
+
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
@@ -291,6 +300,15 @@ done
 %{python2_sitearch}/*
 
 %changelog
+* Wed Jan 18 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.20.git3fa55b8
+- Update to commit 3fa55b8
+
+* Thu Aug 11 2016 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.19.git8bfb8a6
+- Enable tests
+
+* Mon Aug 01 2016 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.18.git8bfb8a6
+- Move ownership of /usr/share/openrave from main package to devel and models
+
 * Mon Aug 01 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-0.17.git8bfb8a6
 - Change to prerelase versioning
 - Remove bundled boost libs

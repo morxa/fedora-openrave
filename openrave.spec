@@ -11,7 +11,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        0.21.%{checkout}%{?dist}
+Release:        0.22.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
@@ -29,12 +29,9 @@ Patch0:         openrave.qhull.patch
 # This fixes a bug where openrave-config would return /usr/usr/lib64/openrave
 # instead of /usr/lib64/openrave.
 Patch1:         openrave.fix-abs-paths.patch
-# Fix openrave issue #323
-# This is only a workaround until upstream finds a proper fix.
-Patch2:         openrave.spatialtree.patch
 # Patch to fix issues with newer ikfast and mpmath versions
 # Pull request: https://github.com/rdiankov/openrave/pull/407
-Patch3:         openrave.ikfast.patch
+Patch2:         openrave.ikfast.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -150,7 +147,6 @@ developing applications that use %{name}.
 %endif
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 
@@ -300,6 +296,9 @@ export OPENRAVE_PLUGINS=%{buildroot}/%{_libdir}/openrave/plugins
 %{python2_sitearch}/*
 
 %changelog
+* Wed Mar 15 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.22.git6607fef
+- Remove upstreamed spatial tree patch
+
 * Wed Mar 15 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.21.git6607fef
 - Update to commit 6607fef
 

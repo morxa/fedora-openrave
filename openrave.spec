@@ -1,4 +1,4 @@
-%global commit 3fa55b84c3a6fa9d704f194ccb392db73f3024cd
+%global commit 6607feffc80e274865e93b5c1001550769090e8d
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 %global checkout git%{shortcommit}
 
@@ -11,7 +11,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        0.20.%{checkout}%{?dist}
+Release:        0.21.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
@@ -300,6 +300,9 @@ export OPENRAVE_PLUGINS=%{buildroot}/%{_libdir}/openrave/plugins
 %{python2_sitearch}/*
 
 %changelog
+* Wed Mar 15 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.21.git6607fef
+- Update to commit 6607fef
+
 * Wed Jan 18 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.20.git3fa55b8
 - Update to commit 3fa55b8
 

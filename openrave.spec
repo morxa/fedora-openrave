@@ -32,6 +32,7 @@ Patch1:         openrave.fix-abs-paths.patch
 # Patch to fix issues with newer ikfast and mpmath versions
 # Pull request: https://github.com/rdiankov/openrave/pull/407
 Patch2:         openrave.ikfast.patch
+Patch3:         openrave.min-template-deduction.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -81,6 +82,7 @@ BuildRequires:  sympy
 
 BuildRequires:  dos2unix
 BuildRequires:  doxygen
+BuildRequires:  graphviz
 BuildRequires:  python-docutils
 BuildRequires:  python-sphinx
 
@@ -147,6 +149,7 @@ developing applications that use %{name}.
 %endif
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 

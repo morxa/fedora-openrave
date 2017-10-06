@@ -1,0 +1,13 @@
+diff --git a/plugins/grasper/graspermodule.cpp b/plugins/grasper/graspermodule.cpp
+index ab1060e..8b3fc4a 100644
+--- a/plugins/grasper/graspermodule.cpp
++++ b/plugins/grasper/graspermodule.cpp
+@@ -1691,7 +1691,7 @@ protected:
+             rewind(errfile);
+             char buf[255];
+             // + 1 because fgets reads at most count - 1 chars
+-            while (static_cast<size_t>(ftell(errfile)) < errMsgEndPos && (fgets(buf, std::min(errMsgEndPos - ftell(errfile) + 1, sizeof(buf)), errfile) != NULL)) {
++            while (static_cast<size_t>(ftell(errfile)) < errMsgEndPos && (fgets(buf, std::min<long int>(errMsgEndPos - ftell(errfile) + 1, sizeof(buf)), errfile) != NULL)) {
+                 RAVELOG_WARN(buf);
+             }
+             rewind(errfile); // Rewind errfile for next error

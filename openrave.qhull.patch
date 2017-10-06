@@ -1,0 +1,40 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4e20b2a..d611f0d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -640,7 +640,7 @@ set(IVCON_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/ivcon")
+ 
+ ## check qhull library
+ check_library_exists(qhull qh_new_qhull "" QHULL_FOUND_LIB)
+-check_include_file(qhull/qhull_a.h HAVE_QHULL_H)
++check_include_file(libqhull/qhull_a.h HAVE_QHULL_H)
+ if( QHULL_FOUND_LIB AND HAVE_QHULL_H )
+   set(QHULL_FOUND 1)
+   set(QHULL_INCLUDE_DIR)
+diff --git a/plugins/grasper/graspermodule.cpp b/plugins/grasper/graspermodule.cpp
+index ef923d5..1c707d1 100644
+--- a/plugins/grasper/graspermodule.cpp
++++ b/plugins/grasper/graspermodule.cpp
+@@ -22,14 +22,14 @@
+ 
+ extern "C"
+ {
+-#include <qhull/qhull.h>
+-#include <qhull/mem.h>
+-#include <qhull/qset.h>
+-#include <qhull/geom.h>
+-#include <qhull/merge.h>
+-#include <qhull/poly.h>
+-#include <qhull/io.h>
+-#include <qhull/stat.h>
++#include <libqhull/libqhull.h>
++#include <libqhull/mem.h>
++#include <libqhull/qset.h>
++#include <libqhull/geom.h>
++#include <libqhull/merge.h>
++#include <libqhull/poly.h>
++#include <libqhull/io.h>
++#include <libqhull/stat.h>
+ }
+ 
+ #endif

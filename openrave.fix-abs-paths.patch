@@ -1,0 +1,46 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index abd26cc..45f4b78 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -171,6 +171,12 @@ set(OPENRAVE_PLUGINS_INSTALL_ABSOLUTE_DIR "${CMAKE_INSTALL_PREFIX}/${OPENRAVE_PL
+ set(OPENRAVE_DATA_INSTALL_ABSOLUTE_DIR "${CMAKE_INSTALL_PREFIX}/${OPENRAVE_DATA_INSTALL_DIR}" CACHE PATH "Absolute dir for data on target OS path, used to write to header file")
+ set(OPENRAVE_PYTHON_INSTALL_ABSOLUTE_DIR "${CMAKE_INSTALL_PREFIX}/${OPENRAVE_PYTHON_INSTALL_DIR}" CACHE PATH "Absolute dir for python on target OS path, used to write to header file")
+ set(OPENRAVE_LOCALE_INSTALL_ABSOLUTE_DIR "${CMAKE_INSTALL_PREFIX}/${OPENRAVE_LOCALE_INSTALL_DIR}" CACHE PATH "Absolute dir for translation files on target OS path, used to write to header file")
++set(OPENRAVE_OCTAVE_INSTALL_ABSOLUTE_DIR "${CMAKE_INSTALL_PREFIX}/${OPENRAVE_OCTAVE_INSTALL_DIR}"
++  CACHE PATH "Absolute dir for Octave bindings")
++set(OPENRAVE_MATLAB_INSTALL_ABSOLUTE_DIR "${CMAKE_INSTALL_PREFIX}/${OPENRAVE_MATLAB_INSTALL_DIR}"
++  CACHE PATH "Absolute dir for Matlab bindings")
++set(OPENRAVE_SHARE_ABSOLUTE_DIR "${CMAKE_INSTALL_PREFIX}/${OPENRAVE_SHARE_DIR}"
++  CACHE PATH "Absolute path for share OpenRAVE data")
+ 
+ # The RPATH to be used when installing
+ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}" "${OPENRAVE_PLUGINS_INSTALL_ABSOLUTE_DIR}")
+diff --git a/openrave-config.in b/openrave-config.in
+index 64ac4cb..bc8d558 100644
+--- a/openrave-config.in
++++ b/openrave-config.in
+@@ -62,19 +62,19 @@ while test $# -gt 0; do
+       echo -L@CMAKE_INSTALL_PREFIX@/lib@LIB_SUFFIX@ -lopenrave@OPENRAVE_LIBRARY_SUFFIX@ @OPENRAVE_BOOST_LIB_DIRS@ -l@Boost_THREAD_LIBRARY_RELEASE@ @OPENRAVE_LOG4CXX_LIB_DIRS@ @OPENRAVE_LOG4CXX_LIBRARY@
+       ;;
+     --python-dir)
+-      echo @CMAKE_INSTALL_PREFIX@/@OPENRAVE_PYTHON_INSTALL_DIR@
++      echo @OPENRAVE_PYTHON_INSTALL_ABSOLUTE_DIR@
+       ;;
+     --octave-dir)
+-      echo @CMAKE_INSTALL_PREFIX@/@OPENRAVE_OCTAVE_INSTALL_DIR@
++      echo @OPENRAVE_OCTAVE_INSTALL_ABSOLUTE_DIR@
+       ;;
+     --matlab-dir)
+-      echo @CMAKE_INSTALL_PREFIX@/@OPENRAVE_MATLAB_INSTALL_DIR@
++      echo @OPENRAVE_MATLAB_INSTALL_ABSOLUTE_DIR@
+       ;;
+     --share-dir)
+-      echo @CMAKE_INSTALL_PREFIX@/@OPENRAVE_SHARE_DIR@
++      echo @OPENRAVE_SHARE_ABSOLUTE_DIR@
+       ;;
+     --plugins-dir)
+-      echo @CMAKE_INSTALL_PREFIX@/@OPENRAVE_PLUGINS_INSTALL_DIR@
++      echo @OPENRAVE_PLUGINS_INSTALL_ABSOLUTE_DIR@
+       ;;
+     --usage)
+       echo "${usage}"

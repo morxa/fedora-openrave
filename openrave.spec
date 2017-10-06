@@ -1,4 +1,4 @@
-%global commit 6607feffc80e274865e93b5c1001550769090e8d
+%global commit 108a9d812b1a32fa657cf336b3f8dd298803c497
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 %global checkout git%{shortcommit}
 
@@ -11,7 +11,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        0.22.%{checkout}%{?dist}
+Release:        0.23.%{checkout}%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
@@ -299,6 +299,9 @@ export OPENRAVE_PLUGINS=%{buildroot}/%{_libdir}/openrave/plugins
 %{python2_sitearch}/*
 
 %changelog
+* Sun Oct 01 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.23.git108a9d8
+- Update to upstream commit 108a9d8
+
 * Wed Mar 15 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.22.git6607fef
 - Remove upstreamed spatial tree patch
 

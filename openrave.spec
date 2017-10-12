@@ -1,6 +1,3 @@
-%global commit 108a9d812b1a32fa657cf336b3f8dd298803c497
-%global shortcommit %(c=%{commit}; echo ${c:0:7})
-%global checkout git%{shortcommit}
 
 # filter internal openrave plugins
 %global __provides_exclude_from ^%{_libdir}/openrave/plugins/.*$
@@ -11,13 +8,13 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        0.23.%{checkout}%{?dist}
+Release:        1%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
 URL:            http://openrave.programmingvision.com
 
-Source0:        https://github.com/rdiankov/openrave/archive/%{commit}/openrave-%{shortcommit}.tar.gz
+Source0:        https://github.com/rdiankov/openrave/archive/v%{version}.tar.gz#/openrave-%{version}.tar.gz
 
 # qhull changed their include path in F25
 # patch created with
@@ -33,6 +30,8 @@ Patch1:         openrave.fix-abs-paths.patch
 # Pull request: https://github.com/rdiankov/openrave/pull/407
 Patch2:         openrave.ikfast.patch
 Patch3:         openrave.min-template-deduction.patch
+# Patch from https://github.com/rdiankov/openrave/commit/401e3145577b0c4811dd01ddf848b496bea51ce6.patch
+Patch4:         openrave.gcc7.patch
 
 # fails to build on arm, because of assembler instruction 'pause', which is not
 # available on arm architectures
@@ -143,13 +142,14 @@ developing applications that use %{name}.
 
 
 %prep
-%setup -q -n %{name}-%{commit}
+%setup -q -n %{name}-%{version}
 %if 0%{?fedora} >= 25
 %patch0 -p1
 %endif
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 
@@ -299,6 +299,9 @@ export OPENRAVE_PLUGINS=%{buildroot}/%{_libdir}/openrave/plugins
 %{python2_sitearch}/*
 
 %changelog
+* Mon Oct 09 2017 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-1
+- Update to 0.9.0
+
 * Sun Oct 01 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.23.git108a9d8
 - Update to upstream commit 108a9d8
 

@@ -8,7 +8,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
@@ -32,10 +32,8 @@ Patch2:         openrave.ikfast.patch
 Patch3:         openrave.min-template-deduction.patch
 # Patch from https://github.com/rdiankov/openrave/commit/401e3145577b0c4811dd01ddf848b496bea51ce6.patch
 Patch4:         openrave.gcc7.patch
-
-# fails to build on arm, because of assembler instruction 'pause', which is not
-# available on arm architectures
-ExcludeArch: %{arm}
+# Workaround for https://github.com/rdiankov/openrave/issues/354
+Patch5:         openrave.remove-spinloop.patch
 
 # models are in a separate noarch package
 Requires:       %{name}-models = %{version}-%{release}
@@ -146,14 +144,7 @@ developing applications that use %{name}.
 
 
 %prep
-%setup -q -n %{name}-%{version}
-%if 0%{?fedora} >= 25
-%patch0 -p1
-%endif
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
+%autosetup -p1 -n %{name}-%{version}
 # remove 3rd party libraries
 rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,zlib} sympy*.tgz
 
@@ -307,6 +298,10 @@ export OCTAVE_PATH=%{buildroot}/%{_libdir}/octave/packages/openrave-%{version}
 %{python2_sitearch}/*
 
 %changelog
+* Sat Oct 21 2017 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-3
+- Add patch to remove spinloop which uses unsupported pause instruction
+- Build on arm again
+
 * Thu Oct 12 2017 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-2
 - Fix BR: boost-python2 for Fedora >= 28
 - Fix test environment setup

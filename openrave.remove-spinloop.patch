@@ -1,0 +1,30 @@
+diff -ur openrave-0.9.0/3rdparty/convexdecomposition/NvThreadConfig.cpp openrave-0.9.0-remove-spinloop/3rdparty/convexdecomposition/NvThreadConfig.cpp
+--- openrave-0.9.0/3rdparty/convexdecomposition/NvThreadConfig.cpp	2017-07-05 08:48:27.000000000 +0200
++++ openrave-0.9.0-remove-spinloop/3rdparty/convexdecomposition/NvThreadConfig.cpp	2017-10-21 12:24:05.778492552 +0200
+@@ -121,15 +121,6 @@
+    #endif
+ }
+ 
+-void tc_spinloop()
+-{
+-#ifndef _MSC_VER
+-      asm ( "pause" );
+-   #else
+-      __asm { pause };
+-   #endif
+-}
+-
+ void tc_interlockedExchange(void *dest, const int64_t exchange)
+ {
+ #ifndef _MSC_VER
+diff -ur openrave-0.9.0/3rdparty/convexdecomposition/NvThreadConfig.h openrave-0.9.0-remove-spinloop/3rdparty/convexdecomposition/NvThreadConfig.h
+--- openrave-0.9.0/3rdparty/convexdecomposition/NvThreadConfig.h	2017-07-05 08:48:27.000000000 +0200
++++ openrave-0.9.0-remove-spinloop/3rdparty/convexdecomposition/NvThreadConfig.h	2017-10-21 12:24:01.693443925 +0200
+@@ -71,7 +71,6 @@
+ NxU32 tc_timeGetTime(void);
+ void     tc_sleep(NxU32 ms);
+ 
+-void     tc_spinloop();
+ void     tc_interlockedExchange(void *dest, const int64_t exchange);
+ NxI32      tc_interlockedCompareExchange(void *dest, NxI32 exchange, NxI32 compare);
+ NxI32      tc_interlockedCompareExchange(void *dest, const NxI32 exchange1, const NxI32 exchange2, const NxI32 compare1, const NxI32 compare2);

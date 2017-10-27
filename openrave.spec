@@ -8,7 +8,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
@@ -222,11 +222,19 @@ rm -f %{buildroot}%{_datadir}/%{name}/openrave.bash
 mv %{buildroot}%{_bindir}/openrave-createplugin.py %{buildroot}%{_bindir}/openrave-createplugin
 
 # replace shebangs
-for file in $(grep -rIl "^#\!.*python" %{buildroot}) ; do
+for file in $(grep -rIl "^#\!.*python" %{buildroot}/%{_bindir}) ; do
   sed -i.orig "1s:^#\!.*python.*:#\!%{__python2}:" $file
   touch -r $file.orig $file
   rm $file.orig
 done
+
+# remove shebangs from site packages
+for file in $(grep -rIl "^#\!.*python" %{buildroot}/%{python2_sitearch}) ; do
+  sed -i.orig "0,/^#\!.*python.*/ d" $file
+  touch -r $file.orig $file
+  rm $file.orig
+done
+
 
 # move header files from python_sitearch to includedir
 for filepath in $(find %{buildroot}/%{python2_sitearch} -type f -name "*.h")
@@ -298,6 +306,9 @@ export OCTAVE_PATH=%{buildroot}/%{_libdir}/octave/packages/openrave-%{version}
 %{python2_sitearch}/*
 
 %changelog
+* Fri Oct 27 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-4
+- Remove shebang from python site-packages
+
 * Sat Oct 21 2017 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-3
 - Add patch to remove spinloop which uses unsupported pause instruction
 - Build on arm again

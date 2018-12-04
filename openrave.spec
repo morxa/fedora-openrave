@@ -309,117 +309,117 @@ export OCTAVE_PATH=%{buildroot}/%{_libdir}/octave/packages/openrave-%{version}
 * Fri Oct 27 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-4
 - Remove shebang from python site-packages
 
-* Sat Oct 21 2017 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-3
+* Sat Oct 21 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-3
 - Add patch to remove spinloop which uses unsupported pause instruction
 - Build on arm again
 
-* Thu Oct 12 2017 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-2
+* Thu Oct 12 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-2
 - Fix BR: boost-python2 for Fedora >= 28
 - Fix test environment setup
 - Do not fail if tests fail
 - BR collada-dom-devel >= 2.5
 
-* Mon Oct 09 2017 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-1
+* Mon Oct 09 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-1
 - Update to 0.9.0
 
-* Sun Oct 01 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.23.git108a9d8
+* Sun Oct 01 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.23.git108a9d8
 - Update to upstream commit 108a9d8
 
-* Wed Mar 15 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.22.git6607fef
+* Wed Mar 15 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.22.git6607fef
 - Remove upstreamed spatial tree patch
 
-* Wed Mar 15 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.21.git6607fef
+* Wed Mar 15 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.21.git6607fef
 - Update to commit 6607fef
 
-* Wed Jan 18 2017 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.20.git3fa55b8
+* Wed Jan 18 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.20.git3fa55b8
 - Update to commit 3fa55b8
 
-* Thu Aug 11 2016 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.19.git8bfb8a6
+* Thu Aug 11 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.19.git8bfb8a6
 - Enable tests
 
-* Mon Aug 01 2016 Till Hofmann <till.hofmann@posteo.de> - 0.9.0-0.18.git8bfb8a6
+* Mon Aug 01 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.18.git8bfb8a6
 - Move ownership of /usr/share/openrave from main package to devel and models
 
-* Mon Aug 01 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-0.17.git8bfb8a6
+* Mon Aug 01 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.17.git8bfb8a6
 - Change to prerelase versioning
 - Remove bundled boost libs
 - Add Provides: for bundled boost-numeric-bindings
 - Fix licenses
 - Disable qtosgrave plugin
 
-* Wed Jun 01 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-16.git8bfb8a6
+* Wed Jun 01 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-16.git8bfb8a6
 - Add patch to fix problems with newer ikpath and mpmath versions
 
-* Sun May 29 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-15.git8bfb8a6
+* Sun May 29 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-15.git8bfb8a6
 - Install locale files
 - Fix absolute path defs (e.g. /usr/usr/share -> /usr/share in openrave-config)
 - Remove unnecessary openrave.bash (not useful for a systemwide install)
 - openrave-devel requires python2-openrave
 - Remove upstreamed patches
 
-* Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-14.20160519git2baf4e3
+* Wed May 25 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-14.20160519git2baf4e3
 - Also compute requirements of plugins (remove __requires_exclude_from)
 
-* Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-13.20160519git2baf4e3
+* Wed May 25 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-13.20160519git2baf4e3
 - Add patch to remove the SubParabolicSmoother
 - Add patch for missing function definition in libconfigurationcache
 
-* Wed May 25 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-12.20160519git2baf4e3
+* Wed May 25 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-12.20160519git2baf4e3
 - Add patch to fix dead symlink /usr/bin/openrave -> /usr/bin/openrave
 - Add workaround patch for openrave issue #323
 - Add patch for mismatching signature in function declaration/definition in
   librplanners
 
-* Thu May 19 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-11.20160519git2baf4e3
+* Thu May 19 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-11.20160519git2baf4e3
 - Add Provides: for bundled libraries
 
-* Thu May 19 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-10.20160519git2baf4e3
+* Thu May 19 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-10.20160519git2baf4e3
 - Update to newest upstream commit 2baf4e3
 - Remove patches that were included upstream
 
-* Tue May 17 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-9.20160503git0d603e2
+* Tue May 17 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-9.20160503git0d603e2
 - Exclude libconfigurationcache from the required libs
 - Fix CXXFLAGS to only link against dependencies that are actually used
 
-* Mon May 16 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-8.20160503git0d603e2
+* Mon May 16 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-8.20160503git0d603e2
 - Add patch to fix all GCC 6.1 errors
 - Add patch to fix template instantiation in std::make_pair
 
-* Wed May 11 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-7.20160503git0d603e2
+* Wed May 11 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-7.20160503git0d603e2
 - Add patch to fix qhull include path on F25
 
-* Tue May 03 2016 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-6.20160503git0d603e2
+* Tue May 03 2016 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-6.20160503git0d603e2
 - Update to commit 0d603e2
 
-* Fri Jul 03 2015 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-5.20150703git9c48ee1
+* Fri Jul 03 2015 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-5.20150703git9c48ee1
 - Update to commit 9c48ee1
 - Remove upstreamed pkgconfig patch
 - Remove erroneous pyscript-permissions patch
 - Fix licenses: doc is licensed under CC-BY, add license files to models subpackage
 
-* Wed Jul 01 2015 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-4.20150624gitb32979b
+* Wed Jul 01 2015 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-4.20150624gitb32979b
 - Split models into separate package
 
-* Wed Jul 01 2015 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-3.20150624gitb32979b
+* Wed Jul 01 2015 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-3.20150624gitb32979b
 - Exclude openrave plugins from Requires
 - ExcludeArch arm
 - Re-add minizip-devel build requirement
 
-* Mon Jun 29 2015 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-2.20150624gitb32979b
+* Mon Jun 29 2015 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-2.20150624gitb32979b
 - Clean up requirements, remove unnecessary BuildRequires and Requires
 - Exclude openrave plugins from Provides
 - Rename python package to python2-openrave
 
-* Wed Jun 24 2015 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-1.20150624gitb32979b
+* Wed Jun 24 2015 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-1.20150624gitb32979b
 - Update to post-release commit 32979b
 
-* Tue Jun 02 2015 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-0.1.20150514gitb8fa1bb
+* Tue Jun 02 2015 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.1.20150514gitb8fa1bb
 - Update to commit b8fa1bb
 
-* Sat Jun 07 2014 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-0.1.20140607gitce4a799
+* Sat Jun 07 2014 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.1.20140607gitce4a799
 - Update to commit ce4a799
 
-* Thu Oct 24 2013 Till Hofmann <hofmann@kbsg.rwth-aachen.de> - 0.9.0-0.20131211gitcc95d323
+* Thu Oct 24 2013 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-0.20131211gitcc95d323
 - Update to commit cc95d323
 
 * Thu Apr 19 2012 Tim Niemueller <tim@niemueller.de> - 0.6.4-1

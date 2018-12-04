@@ -14,7 +14,7 @@ Summary:        Open Robotics Automation Virtual Environment
 License:        LGPLv3+ and ASL 2.0 and BSD
 URL:            http://openrave.programmingvision.com
 
-Source0:        https://github.com/rdiankov/openrave/archive/v%{version}.tar.gz#/openrave-%{version}.tar.gz
+Source0:        https://github.com/rdiankov/openrave/archive/v%{version}/openrave-%{version}.tar.gz
 
 # qhull changed their include path in F25
 # patch created with

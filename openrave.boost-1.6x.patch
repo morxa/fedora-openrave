@@ -1,0 +1,2067 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1df480e0..24796f65 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -315,6 +315,13 @@ endif()
+ if( Boost_FOUND )
+   include_directories(${Boost_INCLUDE_DIRS})
+   set(OPENRAVE_LINK_DIRS ${OPENRAVE_LINK_DIRS} ${Boost_LIBRARY_DIRS})
++  set(Boost_DATE_TIME_LIBRARY "boost_date_time")
++  set(Boost_FILESYSTEM_LIBRARY "boost_filesystem")
++  set(Boost_IOSTREAMS_LIBRARY "boost_iostreams")
++  set(Boost_NUMPY_LIBRARY "boost_numpy")
++  set(Boost_PYTHON_LIBRARY "boost_python")
++  set(Boost_SYSTEM_LIBRARY "boost_system")
++  set(Boost_THREAD_LIBRARY "boost_thread")
+ elseif(Boost_VERSION AND NOT "${Boost_VERSION}" STREQUAL "0")
+   include_directories(${Boost_INCLUDE_DIRS})
+   set(OPENRAVE_LINK_DIRS ${OPENRAVE_LINK_DIRS} ${Boost_LIBRARY_DIRS})
+diff --git a/plugins/configurationcache/openravepy_configurationcache.cpp b/plugins/configurationcache/openravepy_configurationcache.cpp
+index da6d6712..1d0c27ad 100644
+--- a/plugins/configurationcache/openravepy_configurationcache.cpp
++++ b/plugins/configurationcache/openravepy_configurationcache.cpp
+@@ -16,10 +16,10 @@
+ 
+ #define PY_ARRAY_UNIQUE_SYMBOL PyArrayHandle
+ #include <boost/python.hpp>
++#include <boost/python/numpy.hpp>
+ #include <boost/python/exception_translator.hpp>
+ #include <boost/python/docstring_options.hpp>
+ #include <pyconfig.h>
+-#include <numpy/arrayobject.h>
+ #include <openrave/xmlreaders.h>
+ 
+ using namespace OpenRAVE;
+@@ -90,130 +90,146 @@ inline std::vector<T> ExtractArray(const object& o)
+     return v;
+ }
+ 
+-inline numeric::array toPyArrayN(const float* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const float* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f4"));
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,dims, PyArray_FLOAT);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(float));
+-    }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<float>();
++    boost::python::tuple shape = boost::python::make_tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(float));
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const float* pvalues, std::vector<npy_intp>& dims)
++inline numpy::ndarray toPyArrayN(const float* pvalues, const std::vector<size_t>& shape)
+ {
+-    if( dims.size() == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f4"));
+-    }
+-    size_t totalsize = 1;
+-    FOREACH(it,dims) {
+-        totalsize *= *it;
+-    }
+-    if( totalsize == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f4"));
++    if( shape.empty() ) {
++        return numpy::array(boost::python::list());
+     }
+-    PyObject *pyvalues = PyArray_SimpleNew(dims.size(),&dims[0], PyArray_FLOAT);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,totalsize*sizeof(float));
++    size_t size = sizeof(float);
++    for (auto && dim : shape) {
++      size *= dim;
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<float>();
++    numpy::ndarray pyarray = numpy::empty(boost::python::tuple(shape), dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], size);
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const double* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const double* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f8"));
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,dims, PyArray_DOUBLE);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(double));
+-    }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<double>();
++    boost::python::tuple shape = boost::python::tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(double));
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const double* pvalues, std::vector<npy_intp>& dims)
++inline numpy::ndarray toPyArrayN(const double* pvalues, const std::vector<size_t>& shape)
+ {
+-    if( dims.size() == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f8"));
+-    }
+-    size_t totalsize = 1;
+-    FOREACH(it,dims) {
+-        totalsize *= *it;
+-    }
+-    if( totalsize == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f8"));
++    if( shape.empty() ) {
++        return numpy::array(boost::python::list());
+     }
+-    PyObject *pyvalues = PyArray_SimpleNew(dims.size(),&dims[0], PyArray_DOUBLE);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,totalsize*sizeof(double));
++    size_t size = sizeof(double);
++    for (auto && dim : shape) {
++      size *= dim;
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<double>();
++    numpy::ndarray pyarray = numpy::empty(boost::python::tuple(shape), dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], size);
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const uint8_t* pvalues, std::vector<npy_intp>& dims)
++inline numpy::ndarray toPyArrayN(const uint8_t* pvalues, const std::vector<size_t>& shape)
+ {
+-    if( dims.size() == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u1"));
++    if( shape.empty() ) {
++        return numpy::array(boost::python::list());
+     }
+-    size_t totalsize = 1;
+-    for(size_t i = 0; i < dims.size(); ++i) {
+-        totalsize *= dims[i];
+-    }
+-    if( totalsize == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u1"));
++    size_t size = sizeof(uint8_t);
++    for (auto && dim : shape) {
++      size *= dim;
+     }
+-    PyObject *pyvalues = PyArray_SimpleNew(dims.size(),&dims[0], PyArray_UINT8);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,totalsize*sizeof(uint8_t));
+-    }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<uint8_t>();
++    numpy::ndarray pyarray = numpy::empty(boost::python::tuple(shape), dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], size);
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const uint8_t* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const uint8_t* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u1"));
+-    }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,&dims[0], PyArray_UINT8);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(uint8_t));
++        return numpy::array(boost::python::list());
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<uint8_t>();
++    boost::python::tuple shape = boost::python::tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(uint8_t));
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const int* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const int* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("i4"));
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,&dims[0], PyArray_INT32);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(int));
+-    }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<int>();
++    boost::python::tuple shape = boost::python::tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(int));
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const uint32_t* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const uint32_t* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u4"));
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,&dims[0], PyArray_UINT32);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(uint32_t));
++    numpy::dtype dt = numpy::dtype::get_builtin<uint32_t>();
++    boost::python::tuple shape = boost::python::tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(uint32_t));
++    return pyarray;
++}
++
++template <typename T>
++inline object toPyList(const std::vector<T>& v)
++{
++    boost::python::list lvalues;
++    FOREACHC(it,v) {
++        lvalues.append(object(*it));
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    return std::move(lvalues);
+ }
+ 
+ template <typename T>
+-inline numeric::array toPyArray(const std::vector<T>& v)
++inline numpy::ndarray toPyArray(const std::vector<T>& v)
++{
++    if( v.size() == 0 ) {
++        return toPyArrayN((T*)NULL,0);
++    }
++    return toPyArrayN(&v[0],v.size());
++}
++
++template <typename T>
++inline numpy::ndarray toPyArray(const std::vector<T>& v, std::vector<size_t>& dims)
++{
++    boost::python::tuple dims_tuple(dims);
++    if( v.size() == 0 ) {
++        return toPyArrayN((T*)NULL,dims_tuple);
++    }
++    size_t totalsize = 1;
++    FOREACH(it,dims)
++    totalsize *= *it;
++    BOOST_ASSERT(totalsize == v.size());
++    return toPyArrayN(&v[0],dims_tuple);
++}
++
++template <typename T, int N>
++inline numpy::ndarray toPyArray(const boost::array<T,N>& v)
+ {
+     if( v.size() == 0 ) {
+         return toPyArrayN((T*)NULL,0);
+@@ -349,7 +365,8 @@ typedef boost::shared_ptr<PyConfigurationCache> PyConfigurationCachePtr;
+ BOOST_PYTHON_MODULE(openravepy_configurationcache)
+ {
+     using namespace configurationcachepy;
+-    import_array();
++    Py_Initialize();
++    numpy::initialize();
+     scope().attr("__doc__") = "The module contains configuration cache bindings for openravepy\n";
+ 
+     class_<PyConfigurationCache, PyConfigurationCachePtr >("ConfigurationCache", no_init)
+diff --git a/plugins/rplanners/rplanners.h b/plugins/rplanners/rplanners.h
+index f6258284..77e8b474 100644
+--- a/plugins/rplanners/rplanners.h
++++ b/plugins/rplanners/rplanners.h
+@@ -214,7 +214,7 @@ public:
+ 
+     inline dReal _ComputeDistance(const dReal* config0, const dReal* config1) const
+     {
+-        return _distmetricfn(VectorWrapper<const dReal>(config0, config0+_dof), VectorWrapper<dReal>(config1, config1+_dof));
++        return _distmetricfn(VectorWrapper<dReal>(config0, config0+_dof), VectorWrapper<dReal>(config1, config1+_dof));
+     }
+ 
+     inline dReal _ComputeDistance(const dReal* config0, const std::vector<dReal>& config1) const
+diff --git a/python/bindings/CMakeLists.txt b/python/bindings/CMakeLists.txt
+index 57daf404..632aa97c 100644
+--- a/python/bindings/CMakeLists.txt
++++ b/python/bindings/CMakeLists.txt
+@@ -18,8 +18,8 @@ if( Boost_PYTHON_FOUND AND Boost_THREAD_FOUND )
+     #include <boost/shared_ptr.hpp>
+     #define PY_ARRAY_UNIQUE_SYMBOL PyArrayHandle
+     #include <boost/python.hpp>
++    #include <boost/python/numpy.hpp>
+     #include <pyconfig.h>
+-    #include <numpy/arrayobject.h>
+     int main()
+     {
+       return 0;
+@@ -45,7 +45,7 @@ if( Boost_PYTHON_FOUND AND Boost_THREAD_FOUND )
+       ## openrave bindings
+       add_library(openravepy_int SHARED openravepy_kinbody.cpp openravepy_int.cpp openravepy_robot.cpp openravepy_int.h openravepy_global.cpp openravepy_collisionchecker.cpp openravepy_controller.cpp openravepy_ikparameterization.cpp openravepy_iksolver.cpp openravepy_module.cpp openravepy_physicsengine.cpp openravepy_planner.cpp openravepy_planningutils.cpp openravepy_sensor.cpp openravepy_sensorsystem.cpp openravepy_spacesampler.cpp openravepy_trajectory.cpp openravepy_viewer.cpp bindings.cpp bindings.h docstrings.cpp docstrings.h)
+       # stdc++ has to be included before opengl libraries due to some ATI bug (http://wiki.fifengine.de/Segfault_in_cxa_allocate_exception#Workaround)
+-      target_link_libraries(openravepy_int ${STDC_LIBRARY} libopenrave libopenrave-core ${PYTHON_LIBRARIES} ${Boost_PYTHON_LIBRARY} ${Boost_THREAD_LIBRARY} ${extralibs})
++      target_link_libraries(openravepy_int ${STDC_LIBRARY} libopenrave libopenrave-core ${PYTHON_LIBRARIES} ${Boost_PYTHON_LIBRARY} ${Boost_NUMPY_LIBRARY} ${Boost_THREAD_LIBRARY} ${extralibs})
+       add_dependencies(openravepy_int libopenrave libopenrave-core)
+       set_target_properties(openravepy_int PROPERTIES PREFIX "" COMPILE_FLAGS "${OPENRAVEPY_COMPILE_FLAGS}")
+       if( WIN32 )
+@@ -61,7 +61,7 @@ if( Boost_PYTHON_FOUND AND Boost_THREAD_FOUND )
+         add_library(pyANN_int SHARED pyann.cpp bindings.cpp bindings.h)
+         include_directories(${ANN_INCLUDE_DIR})
+         # stdc++ has to be included before opengl libraries due to some ATI bug (http://wiki.fifengine.de/  Segfault_in_cxa_allocate_exception#Workaround)
+-        target_link_libraries(pyANN_int ${STDC_LIBRARY} ANN ${PYTHON_LIBRARIES} ${Boost_PYTHON_LIBRARY} ${Boost_THREAD_LIBRARY} ${extralibs})
++        target_link_libraries(pyANN_int ${STDC_LIBRARY} ANN ${PYTHON_LIBRARIES} ${Boost_PYTHON_LIBRARY} ${Boost_NUMPY_LIBRARY} ${Boost_THREAD_LIBRARY} ${extralibs})
+         set_target_properties(pyANN_int PROPERTIES PREFIX "" COMPILE_FLAGS "${ANN_CFLAGS}" )
+         add_dependencies(pyANN_int ANN)
+         if( WIN32 )
+@@ -83,7 +83,7 @@ if( Boost_PYTHON_FOUND AND Boost_THREAD_FOUND )
+         add_library(convexdecompositionpy SHARED convexdecompositionpy.cpp bindings.cpp bindings.h)
+         include_directories(${CONVEXDECOMPOSITION_INCLUDE_DIR})
+         # stdc++ has to be included before opengl libraries due to some ATI bug (http://wiki.fifengine.de/  Segfault_in_cxa_allocate_exception#Workaround)
+-        target_link_libraries(convexdecompositionpy ${STDC_LIBRARY} convexdecomposition ${PYTHON_LIBRARIES} ${Boost_PYTHON_LIBRARY} ${Boost_THREAD_LIBRARY} ${extralibs})
++        target_link_libraries(convexdecompositionpy ${STDC_LIBRARY} convexdecomposition ${PYTHON_LIBRARIES} ${Boost_PYTHON_LIBRARY} ${Boost_NUMPY_LIBRARY} ${Boost_THREAD_LIBRARY} ${extralibs})
+         set_target_properties(convexdecompositionpy PROPERTIES PREFIX "" COMPILE_FLAGS "${CONVEXDECOMPOSITION_CFLAGS}" )
+         add_dependencies(convexdecompositionpy convexdecomposition)
+         if( WIN32 )
+diff --git a/python/bindings/bindings.h b/python/bindings/bindings.h
+index 86e3c362..fc99ea01 100644
+--- a/python/bindings/bindings.h
++++ b/python/bindings/bindings.h
+@@ -24,6 +24,7 @@
+ #include <boost/shared_ptr.hpp>
+ #include <boost/format.hpp>
+ #include <boost/python.hpp>
++#include <boost/python/numpy.hpp>
+ #include <boost/assert.hpp>
+ #include <boost/cstdint.hpp>
+ #include <boost/version.hpp>
+@@ -401,126 +402,109 @@ void init_python_bindings();
+ 
+ #ifdef OPENRAVE_BININGS_PYARRAY
+ 
+-inline numeric::array toPyArrayN(const float* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const float* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f4"));
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,dims, PyArray_FLOAT);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(float));
+-    }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<float>();
++    boost::python::tuple shape = boost::python::make_tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(float));
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const float* pvalues, std::vector<npy_intp>& dims)
++inline numpy::ndarray toPyArrayN(const float* pvalues, const std::vector<size_t>& shape)
+ {
+-    if( dims.size() == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f4"));
+-    }
+-    size_t totalsize = 1;
+-    FOREACH(it,dims) {
+-        totalsize *= *it;
+-    }
+-    if( totalsize == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f4"));
++    if( shape.empty() ) {
++        return numpy::array(boost::python::list());
+     }
+-    PyObject *pyvalues = PyArray_SimpleNew(dims.size(),&dims[0], PyArray_FLOAT);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,totalsize*sizeof(float));
++    size_t size = sizeof(float);
++    for (auto && dim : shape) {
++      size *= dim;
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<float>();
++    numpy::ndarray pyarray = numpy::empty(boost::python::tuple(shape), dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], size);
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const double* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const double* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f8"));
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,dims, PyArray_DOUBLE);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(double));
+-    }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<double>();
++    boost::python::tuple shape = boost::python::tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(double));
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const double* pvalues, std::vector<npy_intp>& dims)
++inline numpy::ndarray toPyArrayN(const double* pvalues, const std::vector<size_t>& shape)
+ {
+-    if( dims.size() == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f8"));
+-    }
+-    size_t totalsize = 1;
+-    FOREACH(it,dims) {
+-        totalsize *= *it;
++    if( shape.empty() ) {
++        return numpy::array(boost::python::list());
+     }
+-    if( totalsize == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f8"));
++    size_t size = sizeof(double);
++    for (auto && dim : shape) {
++      size *= dim;
+     }
+-    PyObject *pyvalues = PyArray_SimpleNew(dims.size(),&dims[0], PyArray_DOUBLE);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,totalsize*sizeof(double));
+-    }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<double>();
++    numpy::ndarray pyarray = numpy::empty(boost::python::tuple(shape), dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], size);
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const uint8_t* pvalues, std::vector<npy_intp>& dims)
++inline numpy::ndarray toPyArrayN(const uint8_t* pvalues, const std::vector<size_t>& shape)
+ {
+-    if( dims.size() == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u1"));
+-    }
+-    size_t totalsize = 1;
+-    for(size_t i = 0; i < dims.size(); ++i) {
+-        totalsize *= dims[i];
+-    }
+-    if( totalsize == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u1"));
++    if( shape.empty() ) {
++        return numpy::array(boost::python::list());
+     }
+-    PyObject *pyvalues = PyArray_SimpleNew(dims.size(),&dims[0], PyArray_UINT8);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,totalsize*sizeof(uint8_t));
++    size_t size = sizeof(uint8_t);
++    for (auto && dim : shape) {
++      size *= dim;
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<uint8_t>();
++    numpy::ndarray pyarray = numpy::empty(boost::python::tuple(shape), dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], size);
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const uint8_t* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const uint8_t* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u1"));
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,&dims[0], PyArray_UINT8);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(uint8_t));
+-    }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<uint8_t>();
++    boost::python::tuple shape = boost::python::tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(uint8_t));
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const int* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const int* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("i4"));
+-    }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,&dims[0], PyArray_INT32);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(int));
++        return numpy::array(boost::python::list());
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<int>();
++    boost::python::tuple shape = boost::python::tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(int));
++    return pyarray;
+ }
+ 
+-inline numeric::array toPyArrayN(const uint32_t* pvalues, size_t N)
++inline numpy::ndarray toPyArrayN(const uint32_t* pvalues, size_t N)
+ {
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u4"));
+-    }
+-    npy_intp dims[] = {npy_intp(N)};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,&dims[0], PyArray_UINT32);
+-    if( pvalues != NULL ) {
+-        memcpy(PyArray_DATA(pyvalues),pvalues,N*sizeof(uint32_t));
++        return numpy::array(boost::python::list());
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    numpy::dtype dt = numpy::dtype::get_builtin<uint32_t>();
++    boost::python::tuple shape = boost::python::tuple(N);
++    numpy::ndarray pyarray = numpy::empty(shape, dt);
++    std::memcpy(pyarray.get_data(), &pvalues[0], N * sizeof(uint32_t));
++    return pyarray;
+ }
+ 
+ template <typename T>
+@@ -534,7 +518,7 @@ inline object toPyList(const std::vector<T>& v)
+ }
+ 
+ template <typename T>
+-inline numeric::array toPyArray(const std::vector<T>& v)
++inline numpy::ndarray toPyArray(const std::vector<T>& v)
+ {
+     if( v.size() == 0 ) {
+         return toPyArrayN((T*)NULL,0);
+@@ -543,7 +527,7 @@ inline numeric::array toPyArray(const std::vector<T>& v)
+ }
+ 
+ template <typename T>
+-inline numeric::array toPyArray(const std::vector<T>& v, std::vector<npy_intp>& dims)
++inline numpy::ndarray toPyArray(const std::vector<T>& v, std::vector<size_t>& dims)
+ {
+     if( v.size() == 0 ) {
+         return toPyArrayN((T*)NULL,dims);
+@@ -556,7 +540,7 @@ inline numeric::array toPyArray(const std::vector<T>& v, std::vector<npy_intp>&
+ }
+ 
+ template <typename T, int N>
+-inline numeric::array toPyArray(const boost::array<T,N>& v)
++inline numpy::ndarray toPyArray(const boost::array<T,N>& v)
+ {
+     if( v.size() == 0 ) {
+         return toPyArrayN((T*)NULL,0);
+diff --git a/python/bindings/convexdecompositionpy.cpp b/python/bindings/convexdecompositionpy.cpp
+index 71ebf640..ec488613 100644
+--- a/python/bindings/convexdecompositionpy.cpp
++++ b/python/bindings/convexdecompositionpy.cpp
+@@ -19,8 +19,8 @@
+ #include <boost/python.hpp>
+ #include <boost/python/exception_translator.hpp>
+ #include <boost/python/stl_iterator.hpp>
++#include <boost/python/numpy.hpp>
+ #include <pyconfig.h>
+-#include <numpy/arrayobject.h>
+ 
+ #include <exception>
+ #include <boost/shared_ptr.hpp>
+@@ -94,27 +94,27 @@ object computeConvexDecomposition(const boost::multi_array<float, 2>& vertices,
+     for(NxU32 i = 0; i < hullCount; ++i) {
+         ic->getConvexHullResult(i,result);
+ 
+-        npy_intp dims[] = { result.mVcount,3};
+-        PyObject *pyvertices = PyArray_SimpleNew(2,dims, sizeof(result.mVertices[0])==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-        std::copy(&result.mVertices[0],&result.mVertices[3*result.mVcount],(NxF32*)PyArray_DATA(pyvertices));
++        boost::python::tuple shape = boost::python::make_tuple(result.mVcount, 3);
++        numpy::dtype dt = numpy::dtype::get_builtin<NxF32>();
++        numpy::ndarray pyvertices = numpy::empty(shape, dt);
++        std::memcpy(pyvertices.get_data(), &result.mVertices[0], result.mVcount * 3 * sizeof(NxF32));
+ 
+-        dims[0] = result.mTcount;
+-        dims[1] = 3;
+-        PyObject *pyindices = PyArray_SimpleNew(2,dims, PyArray_INT);
+-        std::copy(&result.mIndices[0],&result.mIndices[3*result.mTcount],(int*)PyArray_DATA(pyindices));
++        boost::python::tuple indices_shape = boost::python::make_tuple(result.mTcount, 3);
++        numpy::ndarray pyindices = numpy::empty(indices_shape, numpy::dtype::get_builtin<int>());
++        std::memcpy(pyindices.get_data(), &result.mIndices[0], result.mTcount * 3 * sizeof(int));
+ 
+-        hulls.append(boost::python::make_tuple(static_cast<numeric::array>(handle<>(pyvertices)), static_cast<numeric::array>(handle<>(pyindices))));
++        hulls.append(boost::python::make_tuple(pyvertices, pyindices));
+     }
+ 
+-    return hulls;
++    return std::move(hulls);
+ }
+ 
+ BOOST_PYTHON_FUNCTION_OVERLOADS(computeConvexDecomposition_overloads, computeConvexDecomposition, 2, 10)
+ 
+ BOOST_PYTHON_MODULE(convexdecompositionpy)
+ {
+-    import_array();
+-    numeric::array::set_module_and_type("numpy", "ndarray");
++    Py_Initialize();
++    numpy::initialize();
+     int_from_int();
+     T_from_number<float>();
+     T_from_number<double>();
+diff --git a/python/bindings/openravepy_collisionchecker.cpp b/python/bindings/openravepy_collisionchecker.cpp
+index 007c789a..bc78a098 100644
+--- a/python/bindings/openravepy_collisionchecker.cpp
++++ b/python/bindings/openravepy_collisionchecker.cpp
+@@ -506,7 +506,7 @@ public:
+         object shape = rays.attr("shape");
+         int num = extract<int>(shape[0]);
+         if( num == 0 ) {
+-            return boost::python::make_tuple(numeric::array(boost::python::list()).astype("i4"),numeric::array(boost::python::list()));
++            return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list()));
+         }
+         if( extract<int>(shape[1]) != 6 ) {
+             throw openrave_exception(_("rays object needs to be a Nx6 vector\n"));
+@@ -515,11 +515,10 @@ public:
+         CollisionReportPtr preport(&report,null_deleter());
+ 
+         RAY r;
+-        npy_intp dims[] = { num,6};
+-        PyObject *pypos = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-        dReal* ppos = (dReal*)PyArray_DATA(pypos);
+-        PyObject* pycollision = PyArray_SimpleNew(1,&dims[0], PyArray_BOOL);
+-        bool* pcollision = (bool*)PyArray_DATA(pycollision);
++        numpy::ndarray pypos = numpy::empty(boost::python::make_tuple(num, 6), numpy::dtype::get_builtin<dReal>());
++        dReal* ppos = (dReal*) pypos.get_data();
++        numpy::ndarray pycollision = numpy::empty(boost::python::make_tuple(num), numpy::dtype::get_builtin<bool>());
++        bool* pcollision = (bool*) pycollision.get_data();
+         for(int i = 0; i < num; ++i, ppos += 6) {
+             vector<dReal> ray = ExtractArray<dReal>(rays[i]);
+             r.pos.x = ray[0];
+@@ -550,7 +549,7 @@ public:
+             }
+         }
+ 
+-        return boost::python::make_tuple(static_cast<numeric::array>(handle<>(pycollision)),static_cast<numeric::array>(handle<>(pypos)));
++        return boost::python::make_tuple(pycollision, pypos);
+     }
+ 
+     bool CheckCollision(boost::shared_ptr<PyRay> pyray)
+diff --git a/python/bindings/openravepy_global.cpp b/python/bindings/openravepy_global.cpp
+index 4235e012..56c9bb76 100644
+--- a/python/bindings/openravepy_global.cpp
++++ b/python/bindings/openravepy_global.cpp
+@@ -191,145 +191,95 @@ public:
+     }
+ };
+ 
+-class AutoPyArrayObjectDereferencer
+-{
+-public:
+-    AutoPyArrayObjectDereferencer(PyArrayObject* pyarrobj) : _pyarrobj(pyarrobj) {
+-    }
+-    ~AutoPyArrayObjectDereferencer() {
+-        Py_DECREF(_pyarrobj);
+-    }
+-
+-private:
+-    PyArrayObject* _pyarrobj;
+-};
+-
+ class PyTriMesh
+ {
+ public:
+-    PyTriMesh() {
+-    }
+-    PyTriMesh(object vertices, object indices) : vertices(vertices), indices(indices) {
++    PyTriMesh() : vertices(numpy::array(boost::python::list())), indices(numpy::array(boost::python::list())) {
+     }
+-    PyTriMesh(const TriMesh& mesh) {
+-        npy_intp dims[] = { npy_intp(mesh.vertices.size()), npy_intp(3)};
+-        PyObject *pyvertices = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-        dReal* pvdata = (dReal*)PyArray_DATA(pyvertices);
++    //PyTriMesh(object vertices, object indices) : vertices(vertices), indices(indices) {
++    //}
++    PyTriMesh(const TriMesh& mesh)
++    : vertices(numpy::empty(boost::python::make_tuple(mesh.vertices.size(), 3), numpy::dtype::get_builtin<dReal>())),
++      indices(numpy::empty(boost::python::make_tuple(mesh.indices.size()/3, 3), numpy::dtype::get_builtin<int32_t>()))
++    {
++        dReal* pvdata = (dReal*) vertices.get_data();
+         FOREACHC(itv, mesh.vertices) {
+             *pvdata++ = itv->x;
+             *pvdata++ = itv->y;
+             *pvdata++ = itv->z;
+         }
+-        vertices = static_cast<numeric::array>(handle<>(pyvertices));
+ 
+-        dims[0] = mesh.indices.size()/3;
+-        dims[1] = 3;
+-        PyObject *pyindices = PyArray_SimpleNew(2,dims, PyArray_INT32);
+-        int32_t* pidata = reinterpret_cast<int32_t*>PyArray_DATA(pyindices);
+-        std::memcpy(pidata, mesh.indices.data(), mesh.indices.size() * sizeof(int32_t));
+-        indices = static_cast<numeric::array>(handle<>(pyindices));
++        boost::python::tuple indices_shape = boost::python::make_tuple(mesh.indices.size()/3, 3);
++        numpy::ndarray indices = numpy::empty(indices_shape, numpy::dtype::get_builtin<int32_t>());
++        std::memcpy(indices.get_data(), mesh.indices.data(), mesh.indices.size() * sizeof(int32_t));
+     }
+ 
+     void GetTriMesh(TriMesh& mesh) {
+         int numverts = len(vertices);
+         mesh.vertices.resize(numverts);
+ 
+-        PyObject *pPyVertices = vertices.ptr();
+-        if (PyArray_Check(pPyVertices)) {
+-            if (PyArray_NDIM(pPyVertices) != 2) {
+-                throw openrave_exception(_("vertices must be a 2D array"), ORE_InvalidArguments);
+-            }
+-            if (!PyArray_ISFLOAT(pPyVertices)) {
+-                throw openrave_exception(_("vertices must be in float"), ORE_InvalidArguments);
++        //PyObject *pPyVertices = vertices.ptr();
++        if (vertices.get_nd() != 2) {
++            throw openrave_exception(_("vertices must be a 2D array"), ORE_InvalidArguments);
++        }
++        if (vertices.get_dtype() != numpy::dtype::get_builtin<float>()) {
++            throw openrave_exception(_("vertices must be in float"), ORE_InvalidArguments);
++        }
++        const size_t n = vertices.get_shape()[0];
++        const size_t nElems = vertices.get_shape()[1];
++        if (vertices.get_dtype() == numpy::dtype::get_builtin<float>()) {
++            const float *vdata = reinterpret_cast<float *>(vertices.get_data());
++            for (size_t i = 0, j = 0; i < n; ++i, j += nElems) {
++                mesh.vertices[i].x = static_cast<dReal>(vdata[j + 0]);
++                mesh.vertices[i].y = static_cast<dReal>(vdata[j + 1]);
++                mesh.vertices[i].z = static_cast<dReal>(vdata[j + 2]);
+             }
+-            PyArrayObject* pPyVerticesContiguous = PyArray_GETCONTIGUOUS(reinterpret_cast<PyArrayObject*>(pPyVertices));
+-            AutoPyArrayObjectDereferencer pydecref(pPyVerticesContiguous);
+-
+-            const size_t typeSize = PyArray_ITEMSIZE(pPyVerticesContiguous);
+-            const size_t n = PyArray_DIM(pPyVerticesContiguous, 0);
+-            const size_t nElems = PyArray_DIM(pPyVerticesContiguous, 1);
+-
+-            if (typeSize == sizeof(float)) {
+-                const float *vdata = reinterpret_cast<float*>(PyArray_DATA(pPyVerticesContiguous));
+-
+-                for (size_t i = 0, j = 0; i < n; ++i, j += nElems) {
+-                    mesh.vertices[i].x = static_cast<dReal>(vdata[j + 0]);
+-                    mesh.vertices[i].y = static_cast<dReal>(vdata[j + 1]);
+-                    mesh.vertices[i].z = static_cast<dReal>(vdata[j + 2]);
+-                }
+-            } else if (typeSize == sizeof(double)) {
+-                const double *vdata = reinterpret_cast<double*>(PyArray_DATA(pPyVerticesContiguous));
+-
+-                for (size_t i = 0, j = 0; i < n; ++i, j += nElems) {
+-                    mesh.vertices[i].x = static_cast<dReal>(vdata[j + 0]);
+-                    mesh.vertices[i].y = static_cast<dReal>(vdata[j + 1]);
+-                    mesh.vertices[i].z = static_cast<dReal>(vdata[j + 2]);
+-                }
+-            } else {
+-                throw openrave_exception(_("Unsupported vertices type"), ORE_InvalidArguments);
++        } else if (vertices.get_dtype() == numpy::dtype::get_builtin<double>()) {
++            const double *vdata = reinterpret_cast<double *>(vertices.get_data());
++            for (size_t i = 0, j = 0; i < n; ++i, j += nElems) {
++                mesh.vertices[i].x = static_cast<dReal>(vdata[j + 0]);
++                mesh.vertices[i].y = static_cast<dReal>(vdata[j + 1]);
++                mesh.vertices[i].z = static_cast<dReal>(vdata[j + 2]);
+             }
+-
+         } else {
+-            for(int i = 0; i < numverts; ++i) {
+-                object ov = vertices[i];
+-                mesh.vertices[i].x = extract<dReal>(ov[0]);
+-                mesh.vertices[i].y = extract<dReal>(ov[1]);
+-                mesh.vertices[i].z = extract<dReal>(ov[2]);
+-            }
++            throw openrave_exception(_("Unsupported vertices type"), ORE_InvalidArguments);
+         }
+ 
+         const size_t numtris = len(indices);
+         mesh.indices.resize(3*numtris);
+-        PyObject *pPyIndices = indices.ptr();
+-        if (PyArray_Check(pPyIndices)) {
+-            if (PyArray_NDIM(pPyIndices) != 2 || PyArray_DIM(pPyIndices, 1) != 3 || !PyArray_ISINTEGER(pPyIndices)) {
+-                throw openrave_exception(_("indices must be a Nx3 int array"), ORE_InvalidArguments);
++        if (indices.get_nd() != 2 || indices.get_shape()[1] != 3) {
++            throw openrave_exception(_("indices must be a Nx3 int array"), ORE_InvalidArguments);
++        }
++        numpy::dtype idtype = indices.get_dtype();
++        if (idtype == numpy::dtype::get_builtin<uint16_t>()) {
++            const uint16_t *idata = reinterpret_cast<uint16_t*>(indices.get_data());
++            for (size_t i = 0; i < 3 * numtris; ++i) {
++                mesh.indices[i] = static_cast<int16_t>(idata[i]);
+             }
+-            PyArrayObject* pPyIndiciesContiguous = PyArray_GETCONTIGUOUS(reinterpret_cast<PyArrayObject*>(pPyIndices));
+-            AutoPyArrayObjectDereferencer pydecref(pPyIndiciesContiguous);
+-
+-            const size_t typeSize = PyArray_ITEMSIZE(pPyIndiciesContiguous);
+-            const bool signedInt = PyArray_ISSIGNED(pPyIndiciesContiguous);
+-
+-            if (typeSize == sizeof(int32_t)) {
+-                if (signedInt) {
+-                    const int32_t *idata = reinterpret_cast<int32_t*>(PyArray_DATA(pPyIndiciesContiguous));
+-                    std::memcpy(mesh.indices.data(), idata, numtris * 3 * sizeof(int32_t));
+-                } else {
+-                    const uint32_t *idata = reinterpret_cast<uint32_t*>(PyArray_DATA(pPyIndiciesContiguous));
+-                    for (size_t i = 0; i < 3 * numtris; ++i) {
+-                        mesh.indices[i] = static_cast<int32_t>(idata[i]);
+-                    }
+-                }
+-            } else if (typeSize == sizeof(int64_t)) {
+-                if (signedInt) {
+-                    const int64_t *idata = reinterpret_cast<int64_t*>(PyArray_DATA(pPyIndiciesContiguous));
+-                    for (size_t i = 0; i < 3 * numtris; ++i) {
+-                        mesh.indices[i] = static_cast<int32_t>(idata[i]);
+-                    }
+-                } else {
+-                    const uint64_t *idata = reinterpret_cast<uint64_t*>(PyArray_DATA(pPyIndiciesContiguous));
+-                    for (size_t i = 0; i < 3 * numtris; ++i) {
+-                        mesh.indices[i] = static_cast<int32_t>(idata[i]);
+-                    }
+-                }
+-            } else if (typeSize == sizeof(uint16_t) && !signedInt) {
+-                const uint16_t *idata = reinterpret_cast<uint16_t*>(PyArray_DATA(pPyIndiciesContiguous));
+-                for (size_t i = 0; i < 3 * numtris; ++i) {
+-                    mesh.indices[i] = static_cast<int32_t>(idata[i]);
+-                }
+-            } else {
+-                throw openrave_exception(_("Unsupported indices type"), ORE_InvalidArguments);
++        } else if (idtype == numpy::dtype::get_builtin<uint32_t>()) {
++            const uint32_t *idata = reinterpret_cast<uint32_t*>(indices.get_data());
++            for (size_t i = 0; i < 3 * numtris; ++i) {
++                mesh.indices[i] = static_cast<int32_t>(idata[i]);
+             }
+-
+-        } else {
+-            for(size_t i = 0; i < numtris; ++i) {
+-                object oi = indices[i];
+-                mesh.indices[3*i+0] = extract<int32_t>(oi[0]);
+-                mesh.indices[3*i+1] = extract<int32_t>(oi[1]);
+-                mesh.indices[3*i+2] = extract<int32_t>(oi[2]);
++        } else if (idtype == numpy::dtype::get_builtin<uint64_t>()) {
++            const uint64_t *idata = reinterpret_cast<uint64_t*>(indices.get_data());
++            for (size_t i = 0; i < 3 * numtris; ++i) {
++                mesh.indices[i] = static_cast<int64_t>(idata[i]);
+             }
++        } else if (idtype == numpy::dtype::get_builtin<int16_t>()) {
++            const int16_t *idata = reinterpret_cast<int16_t*>(indices.get_data());
++            std::memcpy(mesh.indices.data(), idata, numtris * 3 * idtype.get_itemsize());
++        } else if (idtype == numpy::dtype::get_builtin<int32_t>()) {
++            const int32_t *idata = reinterpret_cast<int32_t*>(indices.get_data());
++            std::memcpy(mesh.indices.data(), idata, numtris * 3 * idtype.get_itemsize());
++        } else if (idtype == numpy::dtype::get_builtin<int64_t>()) {
++            const int64_t *idata = reinterpret_cast<int64_t*>(indices.get_data());
++            std::memcpy(mesh.indices.data(), idata, numtris * 3 * idtype.get_itemsize());
++        } else {
++            throw openrave_exception(_("Unsupported indices type"), ORE_InvalidArguments);
+         }
++
++
+     }
+ 
+     string __str__() {
+@@ -339,7 +289,7 @@ public:
+         return ConvertStringToUnicode(__str__());
+     }
+ 
+-    object vertices,indices;
++    numpy::ndarray vertices, indices;
+ };
+ 
+ bool ExtractTriMesh(object o, TriMesh& mesh)
+@@ -981,11 +931,11 @@ object poseFromMatrices(object otransforms)
+ {
+     int N = len(otransforms);
+     if( N == 0 ) {
+-        return static_cast<numeric::array>(handle<>());
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = { N,7};
+-    PyObject *pyvalues = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    dReal* pvalues = (dReal*)PyArray_DATA(pyvalues);
++    boost::python::tuple shape = boost::python::make_tuple(N, 7);
++    numpy::ndarray pyvalues = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++    dReal* pvalues = reinterpret_cast<dReal*>(pyvalues.get_data());
+     TransformMatrix tm;
+     for(int j = 0; j < N; ++j) {
+         object o = otransforms[j];
+@@ -1000,18 +950,17 @@ object poseFromMatrices(object otransforms)
+         pvalues[4] = tpose.trans.x; pvalues[5] = tpose.trans.y; pvalues[6] = tpose.trans.z;
+         pvalues += 7;
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    return std::move(pyvalues);
+ }
+ 
+ object InvertPoses(object o)
+ {
+     int N = len(o);
+     if( N == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+-    npy_intp dims[] = { N,7};
+-    PyObject *pytrans = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    dReal* ptrans = (dReal*)PyArray_DATA(pytrans);
++    numpy::ndarray pytrans = numpy::empty(boost::python::make_tuple(N, 7), numpy::dtype::get_builtin<dReal>());
++    dReal* ptrans = (dReal*) pytrans.get_data();
+     for(int i = 0; i < N; ++i, ptrans += 7) {
+         object oinputtrans = o[i];
+         Transform t = Transform(Vector(extract<dReal>(oinputtrans[0]),extract<dReal>(oinputtrans[1]),extract<dReal>(oinputtrans[2]),extract<dReal>(oinputtrans[3])),
+@@ -1019,7 +968,7 @@ object InvertPoses(object o)
+         ptrans[0] = t.rot.x; ptrans[1] = t.rot.y; ptrans[2] = t.rot.z; ptrans[3] = t.rot.w;
+         ptrans[4] = t.trans.x; ptrans[5] = t.trans.y; ptrans[6] = t.trans.z;
+     }
+-    return static_cast<numeric::array>(handle<>(pytrans));
++    return std::move(pytrans);
+ }
+ 
+ object InvertPose(object opose)
+@@ -1058,14 +1007,13 @@ object poseTransformPoints(object opose, object opoints)
+ {
+     Transform t = ExtractTransformType<dReal>(opose);
+     int N = len(opoints);
+-    npy_intp dims[] = { N,3};
+-    PyObject *pytrans = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    dReal* ptrans = (dReal*)PyArray_DATA(pytrans);
++    numpy::ndarray pytrans = numpy::empty(boost::python::make_tuple(N, 3), numpy::dtype::get_builtin<dReal>());
++    dReal* ptrans = (dReal*) pytrans.get_data();
+     for(int i = 0; i < N; ++i, ptrans += 3) {
+         Vector newpoint = t*ExtractVector3(opoints[i]);
+         ptrans[0] = newpoint.x; ptrans[1] = newpoint.y; ptrans[2] = newpoint.z;
+     }
+-    return static_cast<numeric::array>(handle<>(pytrans));
++    return std::move(pytrans);
+ }
+ 
+ object TransformLookat(object olookat, object ocamerapos, object ocameraup)
+@@ -1229,7 +1177,6 @@ void init_openravepy_global()
+     .def_pickle(AABB_pickle_suite())
+     ;
+     class_<PyTriMesh, boost::shared_ptr<PyTriMesh> >("TriMesh", DOXY_CLASS(TriMesh))
+-    .def(init<object,object>(args("vertices","indices")))
+     .def_readwrite("vertices",&PyTriMesh::vertices)
+     .def_readwrite("indices",&PyTriMesh::indices)
+     .def("__str__",&PyTriMesh::__str__)
+diff --git a/python/bindings/openravepy_iksolver.cpp b/python/bindings/openravepy_iksolver.cpp
+index 002f9601..b56fa5e7 100644
+--- a/python/bindings/openravepy_iksolver.cpp
++++ b/python/bindings/openravepy_iksolver.cpp
+@@ -123,7 +123,7 @@ public:
+     }
+     object GetFreeParameters() const {
+         if( _pIkSolver->GetNumFreeParameters() == 0 ) {
+-            return numeric::array(boost::python::list());
++            return numpy::array(boost::python::list());
+         }
+         vector<dReal> values;
+         _pIkSolver->GetFreeParameters(values);
+diff --git a/python/bindings/openravepy_int.cpp b/python/bindings/openravepy_int.cpp
+index c0c78884..26a5f461 100644
+--- a/python/bindings/openravepy_int.cpp
++++ b/python/bindings/openravepy_int.cpp
+@@ -44,25 +44,25 @@ TransformMatrix ExtractTransformMatrix(const object& oraw)
+ 
+ object toPyArray(const TransformMatrix& t)
+ {
+-    npy_intp dims[] = { 4,4};
+-    PyObject *pyvalues = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    dReal* pdata = (dReal*)PyArray_DATA(pyvalues);
++    boost::python::tuple shape = boost::python::make_tuple(4, 4);
++    numpy::ndarray pyvalues = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++    dReal* pdata = (dReal*) pyvalues.get_data();
+     pdata[0] = t.m[0]; pdata[1] = t.m[1]; pdata[2] = t.m[2]; pdata[3] = t.trans.x;
+     pdata[4] = t.m[4]; pdata[5] = t.m[5]; pdata[6] = t.m[6]; pdata[7] = t.trans.y;
+     pdata[8] = t.m[8]; pdata[9] = t.m[9]; pdata[10] = t.m[10]; pdata[11] = t.trans.z;
+     pdata[12] = 0; pdata[13] = 0; pdata[14] = 0; pdata[15] = 1;
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    return std::move(pyvalues);
+ }
+ 
+ 
+ object toPyArray(const Transform& t)
+ {
+-    npy_intp dims[] = { 7};
+-    PyObject *pyvalues = PyArray_SimpleNew(1,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    dReal* pdata = (dReal*)PyArray_DATA(pyvalues);
++    boost::python::tuple shape = boost::python::make_tuple(7);
++    numpy::ndarray pyvalues = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++    dReal* pdata = (dReal*) pyvalues.get_data();
+     pdata[0] = t.rot.x; pdata[1] = t.rot.y; pdata[2] = t.rot.z; pdata[3] = t.rot.w;
+     pdata[4] = t.trans.x; pdata[5] = t.trans.y; pdata[6] = t.trans.z;
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    return std::move(pyvalues);
+ }
+ 
+ AttributesList toAttributesList(boost::python::dict odict)
+@@ -938,7 +938,7 @@ public:
+         object shape = rays.attr("shape");
+         int num = extract<int>(shape[0]);
+         if( num == 0 ) {
+-            return boost::python::make_tuple(numeric::array(boost::python::list()).astype("i4"),numeric::array(boost::python::list()));
++            return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list()));
+         }
+         if( extract<int>(shape[1]) != 6 ) {
+             throw openrave_exception(_("rays object needs to be a Nx6 vector\n"));
+@@ -947,11 +947,11 @@ public:
+         CollisionReportPtr preport(&report,null_deleter());
+ 
+         RAY r;
+-        npy_intp dims[] = { num,6};
+-        PyObject *pypos = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-        dReal* ppos = (dReal*)PyArray_DATA(pypos);
+-        PyObject* pycollision = PyArray_SimpleNew(1,&dims[0], PyArray_BOOL);
+-        bool* pcollision = (bool*)PyArray_DATA(pycollision);
++        boost::python::tuple pypos_shape = boost::python::make_tuple(num, 6);
++        numpy::ndarray pypos = numpy::empty(pypos_shape, numpy::dtype::get_builtin<dReal>());
++        dReal* ppos = (dReal*) pypos.get_data();
++        numpy::ndarray pycollision = numpy::empty(boost::python::make_tuple(num), numpy::dtype::get_builtin<bool>());
++        bool* pcollision = (bool*) pycollision.get_data();
+         for(int i = 0; i < num; ++i, ppos += 6) {
+             vector<dReal> ray = ExtractArray<dReal>(rays[i]);
+             r.pos.x = ray[0];
+@@ -982,7 +982,7 @@ public:
+             }
+         }
+ 
+-        return boost::python::make_tuple(static_cast<numeric::array>(handle<>(pycollision)),static_cast<numeric::array>(handle<>(pypos)));
++        return boost::python::make_tuple(pycollision, pypos);
+     }
+ 
+     bool CheckCollision(boost::shared_ptr<PyRay> pyray)
+@@ -1946,8 +1946,8 @@ BOOST_PYTHON_MODULE(openravepy_int)
+     doc_options.enable_py_signatures();
+     doc_options.enable_user_defined();
+ #endif
+-    import_array();
+-    numeric::array::set_module_and_type("numpy", "ndarray");
++    Py_Initialize();
++    numpy::initialize();
+     int_from_int();
+     uint8_from_int();
+     T_from_number<float>();
+diff --git a/python/bindings/openravepy_int.h b/python/bindings/openravepy_int.h
+index 4adb4df6..db050aae 100644
+--- a/python/bindings/openravepy_int.h
++++ b/python/bindings/openravepy_int.h
+@@ -45,8 +45,8 @@
+ #include <boost/python.hpp>
+ #include <boost/python/exception_translator.hpp>
+ #include <boost/python/docstring_options.hpp>
++#include <boost/python/numpy.hpp>
+ #include <pyconfig.h>
+-#include <numpy/arrayobject.h>
+ 
+ #define OPENRAVE_BININGS_PYARRAY
+ #include "bindings.h"
+@@ -291,58 +291,58 @@ inline RaveTransformMatrix<T> ExtractTransformMatrixType(const object& o)
+ 
+ inline object toPyArrayRotation(const TransformMatrix& t)
+ {
+-    npy_intp dims[] = {3,3};
+-    PyObject *pyvalues = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    dReal* pdata = (dReal*)PyArray_DATA(pyvalues);
++    boost::python::tuple shape = boost::python::make_tuple(3, 3);
++    numpy::ndarray pyvalues = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++    dReal* pdata = (dReal*) pyvalues.get_data();
+     pdata[0] = t.m[0]; pdata[1] = t.m[1]; pdata[2] = t.m[2];
+     pdata[3] = t.m[4]; pdata[4] = t.m[5]; pdata[5] = t.m[6];
+     pdata[6] = t.m[8]; pdata[7] = t.m[9]; pdata[8] = t.m[10];
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    return std::move(pyvalues);
+ }
+ 
+ inline object toPyArray3(const std::vector<RaveVector<float> >& v)
+ {
+-    npy_intp dims[] = { npy_intp(v.size()), npy_intp(3) };
+-    PyObject *pyvalues = PyArray_SimpleNew(2,dims, PyArray_FLOAT);
++    boost::python::tuple shape = boost::python::make_tuple(v.size(), 3);
++    numpy::ndarray pyvalues = numpy::empty(shape, numpy::dtype::get_builtin<float>());
+     if( v.size() > 0 ) {
+-        float* pf = (float*)PyArray_DATA(pyvalues);
++        float* pf = (float*) pyvalues.get_data();
+         FOREACHC(it,v) {
+             *pf++ = it->x;
+             *pf++ = it->y;
+             *pf++ = it->z;
+         }
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    return std::move(pyvalues);
+ }
+ 
+ inline object toPyArray3(const std::vector<RaveVector<double> >& v)
+ {
+-    npy_intp dims[] = { npy_intp(v.size()), npy_intp(3) };
+-    PyObject *pyvalues = PyArray_SimpleNew(2,dims, PyArray_DOUBLE);
++    boost::python::tuple shape = boost::python::make_tuple(v.size(), 3);
++    numpy::ndarray pyvalues = numpy::empty(shape, numpy::dtype::get_builtin<double>());
+     if( v.size() > 0 ) {
+-        double* pf = (double*)PyArray_DATA(pyvalues);
++        double* pf = (double*) pyvalues.get_data();
+         FOREACHC(it,v) {
+             *pf++ = it->x;
+             *pf++ = it->y;
+             *pf++ = it->z;
+         }
+     }
+-    return static_cast<numeric::array>(handle<>(pyvalues));
++    return std::move(pyvalues);
+ }
+ 
+ inline object toPyVector2(Vector v)
+ {
+-    return numeric::array(boost::python::make_tuple(v.x,v.y));
++    return numpy::array(boost::python::make_tuple(v.x,v.y));
+ }
+ 
+ inline object toPyVector3(Vector v)
+ {
+-    return numeric::array(boost::python::make_tuple(v.x,v.y,v.z));
++    return numpy::array(boost::python::make_tuple(v.x,v.y,v.z));
+ }
+ 
+ inline object toPyVector4(Vector v)
+ {
+-    return numeric::array(boost::python::make_tuple(v.x,v.y,v.z,v.w));
++    return numpy::array(boost::python::make_tuple(v.x,v.y,v.z,v.w));
+ }
+ 
+ /// \brief converts dictionary of keyvalue pairs
+diff --git a/python/bindings/openravepy_kinbody.cpp b/python/bindings/openravepy_kinbody.cpp
+index 8a7d4103..02d9ab84 100644
+--- a/python/bindings/openravepy_kinbody.cpp
++++ b/python/bindings/openravepy_kinbody.cpp
+@@ -768,23 +768,23 @@ public:
+ 
+     object GetLocalInertia() const {
+         TransformMatrix t = _plink->GetLocalInertia();
+-        npy_intp dims[] = { 3, 3};
+-        PyObject *pyvalues = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-        dReal* pdata = (dReal*)PyArray_DATA(pyvalues);
++        boost::python::tuple shape = boost::python::make_tuple(3, 3);
++        numpy::ndarray pyvalues = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++        dReal* pdata = (dReal*) pyvalues.get_data();
+         pdata[0] = t.m[0]; pdata[1] = t.m[1]; pdata[2] = t.m[2];
+         pdata[3] = t.m[4]; pdata[4] = t.m[5]; pdata[5] = t.m[6];
+         pdata[6] = t.m[8]; pdata[7] = t.m[9]; pdata[8] = t.m[10];
+-        return static_cast<numeric::array>(handle<>(pyvalues));
++        return std::move(pyvalues);
+     }
+     object GetGlobalInertia() const {
+         TransformMatrix t = _plink->GetGlobalInertia();
+-        npy_intp dims[] = { 3, 3};
+-        PyObject *pyvalues = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-        dReal* pdata = (dReal*)PyArray_DATA(pyvalues);
++        boost::python::tuple shape = boost::python::make_tuple(3, 3);
++        numpy::ndarray pyvalues = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++        dReal* pdata = (dReal*) pyvalues.get_data();
+         pdata[0] = t.m[0]; pdata[1] = t.m[1]; pdata[2] = t.m[2];
+         pdata[3] = t.m[4]; pdata[4] = t.m[5]; pdata[5] = t.m[6];
+         pdata[6] = t.m[8]; pdata[7] = t.m[9]; pdata[8] = t.m[10];
+-        return static_cast<numeric::array>(handle<>(pyvalues));
++        return std::move(pyvalues);
+     }
+     dReal GetMass() const {
+         return _plink->GetMass();
+@@ -1540,11 +1540,11 @@ object PyKinBody::GetDOFValues() const
+ object PyKinBody::GetDOFValues(object oindices) const
+ {
+     if( IS_PYTHONOBJECT_NONE(oindices) ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<int> vindices = ExtractArray<int>(oindices);
+     if( vindices.size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<dReal> values;
+     _pbody->GetDOFValues(values,vindices);
+@@ -1561,11 +1561,11 @@ object PyKinBody::GetDOFVelocities() const
+ object PyKinBody::GetDOFVelocities(object oindices) const
+ {
+     if( IS_PYTHONOBJECT_NONE(oindices) ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<int> vindices = ExtractArray<int>(oindices);
+     if( vindices.size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<dReal> values;
+     _pbody->GetDOFVelocities(values,vindices);
+@@ -1603,11 +1603,11 @@ object PyKinBody::GetDOFTorqueLimits() const
+ object PyKinBody::GetDOFLimits(object oindices) const
+ {
+     if( IS_PYTHONOBJECT_NONE(oindices) ) {
+-        return boost::python::make_tuple(numeric::array(boost::python::list()), numeric::array(boost::python::list())); // always need 2 since users can do lower, upper = GetDOFLimits()
++        return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list())); // always need 2 since users can do lower, upper = GetDOFLimits()
+     }
+     vector<int> vindices = ExtractArray<int>(oindices);
+     if( vindices.size() == 0 ) {
+-        return boost::python::make_tuple(numeric::array(boost::python::list()), numeric::array(boost::python::list())); // always need 2 since users can do lower, upper = GetDOFLimits()
++        return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list())); // always need 2 since users can do lower, upper = GetDOFLimits()
+     }
+     vector<dReal> vlower, vupper, vtemplower, vtempupper;
+     vlower.reserve(vindices.size());
+@@ -1624,11 +1624,11 @@ object PyKinBody::GetDOFLimits(object oindices) const
+ object PyKinBody::GetDOFVelocityLimits(object oindices) const
+ {
+     if( IS_PYTHONOBJECT_NONE(oindices) ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<int> vindices = ExtractArray<int>(oindices);
+     if( vindices.size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<dReal> vmax, vtempmax;
+     vmax.reserve(vindices.size());
+@@ -1643,11 +1643,11 @@ object PyKinBody::GetDOFVelocityLimits(object oindices) const
+ object PyKinBody::GetDOFAccelerationLimits(object oindices) const
+ {
+     if( IS_PYTHONOBJECT_NONE(oindices) ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<int> vindices = ExtractArray<int>(oindices);
+     if( vindices.size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<dReal> vmax, vtempmax;
+     vmax.reserve(vindices.size());
+@@ -1662,11 +1662,11 @@ object PyKinBody::GetDOFAccelerationLimits(object oindices) const
+ object PyKinBody::GetDOFTorqueLimits(object oindices) const
+ {
+     if( IS_PYTHONOBJECT_NONE(oindices) ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<int> vindices = ExtractArray<int>(oindices);
+     if( vindices.size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<dReal> vmax, vtempmax;
+     vmax.reserve(vindices.size());
+@@ -1709,11 +1709,11 @@ object PyKinBody::GetDOFWeights() const
+ object PyKinBody::GetDOFWeights(object oindices) const
+ {
+     if( IS_PYTHONOBJECT_NONE(oindices) ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<int> vindices = ExtractArray<int>(oindices);
+     if( vindices.size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<dReal> values, v;
+     values.reserve(vindices.size());
+@@ -1734,11 +1734,11 @@ object PyKinBody::GetDOFResolutions() const
+ object PyKinBody::GetDOFResolutions(object oindices) const
+ {
+     if( IS_PYTHONOBJECT_NONE(oindices) ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<int> vindices = ExtractArray<int>(oindices);
+     if( vindices.size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<dReal> values, v;
+     values.reserve(vindices.size());
+@@ -1996,14 +1996,14 @@ void PyKinBody::SetDOFVelocities(object odofvelocities, uint32_t checklimits, ob
+ object PyKinBody::GetLinkVelocities() const
+ {
+     if( _pbody->GetLinks().size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     std::vector<std::pair<Vector,Vector> > velocities;
+     _pbody->GetLinkVelocities(velocities);
+ 
+-    npy_intp dims[] = {npy_intp(velocities.size()),npy_intp(6)};
+-    PyObject *pyvel = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    dReal* pfvel = (dReal*)PyArray_DATA(pyvel);
++    boost::python::tuple shape = boost::python::make_tuple(velocities.size(), 6);
++    numpy::ndarray pyvel = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++    dReal* pfvel = (dReal*) pyvel.get_data();
+     for(size_t i = 0; i < velocities.size(); ++i) {
+         pfvel[6*i+0] = velocities[i].first.x;
+         pfvel[6*i+1] = velocities[i].first.y;
+@@ -2012,13 +2012,13 @@ object PyKinBody::GetLinkVelocities() const
+         pfvel[6*i+4] = velocities[i].second.y;
+         pfvel[6*i+5] = velocities[i].second.z;
+     }
+-    return static_cast<numeric::array>(handle<>(pyvel));
++    return std::move(pyvel);
+ }
+ 
+ object PyKinBody::GetLinkAccelerations(object odofaccelerations, object oexternalaccelerations=object()) const
+ {
+     if( _pbody->GetLinks().size() == 0 ) {
+-        return numeric::array(boost::python::list());
++        return numpy::array(boost::python::list());
+     }
+     vector<dReal> vDOFAccelerations = ExtractArray<dReal>(odofaccelerations);
+     KinBody::AccelerationMapPtr pmapExternalAccelerations;
+@@ -2038,9 +2038,9 @@ object PyKinBody::GetLinkAccelerations(object odofaccelerations, object oexterna
+     std::vector<std::pair<Vector,Vector> > vLinkAccelerations;
+     _pbody->GetLinkAccelerations(vDOFAccelerations, vLinkAccelerations, pmapExternalAccelerations);
+ 
+-    npy_intp dims[] = {npy_intp(vLinkAccelerations.size()),npy_intp(6)};
+-    PyObject *pyaccel = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    dReal* pf = (dReal*)PyArray_DATA(pyaccel);
++    boost::python::tuple shape = boost::python::make_tuple(vLinkAccelerations.size(), 6);
++    numpy::ndarray pyaccel = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++    dReal* pf = (dReal*) pyaccel.get_data();
+     for(size_t i = 0; i < vLinkAccelerations.size(); ++i) {
+         pf[6*i+0] = vLinkAccelerations[i].first.x;
+         pf[6*i+1] = vLinkAccelerations[i].first.y;
+@@ -2049,7 +2049,7 @@ object PyKinBody::GetLinkAccelerations(object odofaccelerations, object oexterna
+         pf[6*i+4] = vLinkAccelerations[i].second.y;
+         pf[6*i+5] = vLinkAccelerations[i].second.z;
+     }
+-    return static_cast<numeric::array>(handle<>(pyaccel));
++    return std::move(pyaccel);
+ }
+ 
+ object PyKinBody::ComputeAABB()
+@@ -2256,7 +2256,7 @@ object PyKinBody::ComputeJacobianTranslation(int index, object oposition, object
+     }
+     std::vector<dReal> vjacobian;
+     _pbody->ComputeJacobianTranslation(index,ExtractVector3(oposition),vjacobian,vindices);
+-    std::vector<npy_intp> dims(2); dims[0] = 3; dims[1] = vjacobian.size()/3;
++    std::vector<size_t> dims(2); dims[0] = 3; dims[1] = vjacobian.size()/3;
+     return toPyArray(vjacobian,dims);
+ }
+ 
+@@ -2268,7 +2268,7 @@ object PyKinBody::ComputeJacobianAxisAngle(int index, object oindices)
+     }
+     std::vector<dReal> vjacobian;
+     _pbody->ComputeJacobianAxisAngle(index,vjacobian,vindices);
+-    std::vector<npy_intp> dims(2); dims[0] = 3; dims[1] = vjacobian.size()/3;
++    std::vector<size_t> dims(2); dims[0] = 3; dims[1] = vjacobian.size()/3;
+     return toPyArray(vjacobian,dims);
+ }
+ 
+@@ -2276,7 +2276,7 @@ object PyKinBody::CalculateJacobian(int index, object oposition)
+ {
+     std::vector<dReal> vjacobian;
+     _pbody->CalculateJacobian(index,ExtractVector3(oposition),vjacobian);
+-    std::vector<npy_intp> dims(2); dims[0] = 3; dims[1] = vjacobian.size()/3;
++    std::vector<size_t> dims(2); dims[0] = 3; dims[1] = vjacobian.size()/3;
+     return toPyArray(vjacobian,dims);
+ }
+ 
+@@ -2284,7 +2284,7 @@ object PyKinBody::CalculateRotationJacobian(int index, object q) const
+ {
+     std::vector<dReal> vjacobian;
+     _pbody->CalculateRotationJacobian(index,ExtractVector4(q),vjacobian);
+-    std::vector<npy_intp> dims(2); dims[0] = 4; dims[1] = _pbody->GetDOF();
++    std::vector<size_t> dims(2); dims[0] = 4; dims[1] = _pbody->GetDOF();
+     return toPyArray(vjacobian,dims);
+ }
+ 
+@@ -2292,7 +2292,7 @@ object PyKinBody::CalculateAngularVelocityJacobian(int index) const
+ {
+     std::vector<dReal> vjacobian;
+     _pbody->ComputeJacobianAxisAngle(index,vjacobian);
+-    std::vector<npy_intp> dims(2); dims[0] = 3; dims[1] = _pbody->GetDOF();
++    std::vector<size_t> dims(2); dims[0] = 3; dims[1] = _pbody->GetDOF();
+     return toPyArray(vjacobian,dims);
+ }
+ 
+@@ -2305,7 +2305,7 @@ object PyKinBody::ComputeHessianTranslation(int index, object oposition, object
+     size_t dof = vindices.size() == 0 ? (size_t)_pbody->GetDOF() : vindices.size();
+     std::vector<dReal> vhessian;
+     _pbody->ComputeHessianTranslation(index,ExtractVector3(oposition),vhessian,vindices);
+-    std::vector<npy_intp> dims(3); dims[0] = dof; dims[1] = 3; dims[2] = dof;
++    std::vector<size_t> dims(3); dims[0] = dof; dims[1] = 3; dims[2] = dof;
+     return toPyArray(vhessian,dims);
+ }
+ 
+@@ -2318,7 +2318,7 @@ object PyKinBody::ComputeHessianAxisAngle(int index, object oindices)
+     size_t dof = vindices.size() == 0 ? (size_t)_pbody->GetDOF() : vindices.size();
+     std::vector<dReal> vhessian;
+     _pbody->ComputeHessianAxisAngle(index,vhessian,vindices);
+-    std::vector<npy_intp> dims(3); dims[0] = dof; dims[1] = 3; dims[2] = dof;
++    std::vector<size_t> dims(3); dims[0] = dof; dims[1] = 3; dims[2] = dof;
+     return toPyArray(vhessian,dims);
+ }
+ 
+diff --git a/python/bindings/openravepy_physicsengine.cpp b/python/bindings/openravepy_physicsengine.cpp
+index 7b99c0c2..6af71f9d 100644
+--- a/python/bindings/openravepy_physicsengine.cpp
++++ b/python/bindings/openravepy_physicsengine.cpp
+@@ -87,15 +87,14 @@ public:
+         CHECK_POINTER(pykinbody);
+         KinBodyPtr pbody = openravepy::GetKinBody(pykinbody);
+         if( pbody->GetLinks().size() == 0 ) {
+-            return numeric::array(boost::python::list());
++            return numpy::array(boost::python::list());
+         }
+         std::vector<std::pair<Vector,Vector> > velocities;
+         if( !_pPhysicsEngine->GetLinkVelocities(pbody,velocities) ) {
+             return object();
+         }
+-        npy_intp dims[] = { npy_intp(velocities.size()), 6};
+-        PyObject *pyvel = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-        dReal* pfvel = (dReal*)PyArray_DATA(pyvel);
++        numpy::ndarray pyvel = numpy::empty(boost::python::make_tuple(velocities.size(), 6), numpy::dtype::get_builtin<dReal>());
++        dReal* pfvel = (dReal*) pyvel.get_data();
+         for(size_t i = 0; i < velocities.size(); ++i) {
+             pfvel[6*i+0] = velocities[i].first.x;
+             pfvel[6*i+1] = velocities[i].first.y;
+@@ -104,7 +103,7 @@ public:
+             pfvel[6*i+4] = velocities[i].second.y;
+             pfvel[6*i+5] = velocities[i].second.z;
+         }
+-        return static_cast<numeric::array>(handle<>(pyvel));
++        return std::move(pyvel);
+     }
+ 
+     bool SetBodyForce(object pylink, object force, object position, bool bAdd)
+diff --git a/python/bindings/openravepy_robot.cpp b/python/bindings/openravepy_robot.cpp
+index cf81d5dc..09655612 100644
+--- a/python/bindings/openravepy_robot.cpp
++++ b/python/bindings/openravepy_robot.cpp
+@@ -33,7 +33,7 @@ public:
+ public:
+         PyManipulatorInfo() {
+             _tLocalTool = ReturnTransform(Transform());
+-            _vChuckingDirection = numeric::array(boost::python::list());
++            _vChuckingDirection = numpy::array(boost::python::list());
+             _vdirection = toPyVector3(Vector(0,0,1));
+             _vGripperJointNames = boost::python::list();
+         }
+@@ -171,7 +171,7 @@ public:
+         object GetArmDOFValues()
+         {
+             if( _pmanip->GetArmDOF() == 0 ) {
+-                return numeric::array(boost::python::list());
++                return numpy::array(boost::python::list());
+             }
+             vector<dReal> values;
+             _pmanip->GetArmDOFValues(values);
+@@ -180,7 +180,7 @@ public:
+         object GetGripperDOFValues()
+         {
+             if( _pmanip->GetGripperDOF() == 0 ) {
+-                return numeric::array(boost::python::list());
++                return numpy::array(boost::python::list());
+             }
+             vector<dReal> values;
+             _pmanip->GetGripperDOFValues(values);
+@@ -221,7 +221,7 @@ public:
+         object GetFreeParameters() const {
+             RAVELOG_WARN("Manipulator::GetFreeParameters() is deprecated\n");
+             if( _pmanip->GetIkSolver()->GetNumFreeParameters() == 0 ) {
+-                return numeric::array(boost::python::list());
++                return numpy::array(boost::python::list());
+             }
+             vector<dReal> values;
+             _pmanip->GetIkSolver()->GetFreeParameters(values);
+@@ -392,23 +392,24 @@ public:
+                 std::vector<std::vector<dReal> > vsolutions;
+                 if( ExtractIkParameterization(oparam,ikparam) ) {
+                     if( !_FindIKSolutions(ikparam,vsolutions,filteroptions,releasegil) ) {
+-                        return numeric::array(boost::python::list());
++                        return numpy::array(boost::python::list());
+                     }
+                 }
+                 // assume transformation matrix
+                 else if( !_FindIKSolutions(ExtractTransform(oparam),vsolutions,filteroptions,releasegil) ) {
+-                    return numeric::array(boost::python::list());
++                    return numpy::array(boost::python::list());
+                 }
+ 
+-                npy_intp dims[] = { npy_intp(vsolutions.size()), npy_intp(_pmanip->GetArmIndices().size()) };
+-                PyObject *pysolutions = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-                dReal* ppos = (dReal*)PyArray_DATA(pysolutions);
++                size_t arm_indices_size = _pmanip->GetArmIndices().size();
++                boost::python::tuple shape = boost::python::make_tuple(vsolutions.size(), arm_indices_size);
++                numpy::ndarray pysolutions = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++                dReal* ppos = (dReal*) pysolutions.get_data();
+                 FOREACH(itsol,vsolutions) {
+-                    BOOST_ASSERT(itsol->size()==size_t(dims[1]));
++                    BOOST_ASSERT(itsol->size()==arm_indices_size);
+                     std::copy(itsol->begin(),itsol->end(),ppos);
+                     ppos += itsol->size();
+                 }
+-                return static_cast<numeric::array>(handle<>(pysolutions));
++                return std::move(pysolutions);
+             }
+         }
+ 
+@@ -439,23 +440,24 @@ public:
+                 std::vector<std::vector<dReal> > vsolutions;
+                 if( ExtractIkParameterization(oparam,ikparam) ) {
+                     if( !_FindIKSolutions(ikparam,vfreeparams,vsolutions,filteroptions,releasegil) ) {
+-                        return numeric::array(boost::python::list());
++                        return numpy::array(boost::python::list());
+                     }
+                 }
+                 // assume transformation matrix
+                 else if( !_FindIKSolutions(ExtractTransform(oparam),vfreeparams, vsolutions,filteroptions,releasegil) ) {
+-                    return numeric::array(boost::python::list());
++                    return numpy::array(boost::python::list());
+                 }
+ 
+-                npy_intp dims[] = { npy_intp(vsolutions.size()), npy_intp(_pmanip->GetArmIndices().size()) };
+-                PyObject *pysolutions = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-                dReal* ppos = (dReal*)PyArray_DATA(pysolutions);
++                size_t arm_indices_size = _pmanip->GetArmIndices().size();
++                boost::python::tuple shape = boost::python::make_tuple(vsolutions.size(), arm_indices_size);
++                numpy::ndarray pysolutions = numpy::empty(shape, numpy::dtype::get_builtin<dReal>());
++                dReal* ppos = (dReal*) pysolutions.get_data();
+                 FOREACH(itsol,vsolutions) {
+-                    BOOST_ASSERT(itsol->size()==size_t(dims[1]));
++                    BOOST_ASSERT(itsol->size()==arm_indices_size);
+                     std::copy(itsol->begin(),itsol->end(),ppos);
+                     ppos += itsol->size();
+                 }
+-                return static_cast<numeric::array>(handle<>(pysolutions));
++                return pysolutions;
+             }
+         }
+ 
+@@ -585,7 +587,7 @@ public:
+         {
+             std::vector<dReal> vjacobian;
+             _pmanip->CalculateJacobian(vjacobian);
+-            std::vector<npy_intp> dims(2); dims[0] = 3; dims[1] = _pmanip->GetArmIndices().size();
++            std::vector<size_t> dims(2); dims[0] = 3; dims[1] = _pmanip->GetArmIndices().size();
+             return toPyArray(vjacobian,dims);
+         }
+ 
+@@ -593,7 +595,7 @@ public:
+         {
+             std::vector<dReal> vjacobian;
+             _pmanip->CalculateRotationJacobian(vjacobian);
+-            std::vector<npy_intp> dims(2); dims[0] = 4; dims[1] = _pmanip->GetArmIndices().size();
++            std::vector<size_t> dims(2); dims[0] = 4; dims[1] = _pmanip->GetArmIndices().size();
+             return toPyArray(vjacobian,dims);
+         }
+ 
+@@ -601,7 +603,7 @@ public:
+         {
+             std::vector<dReal> vjacobian;
+             _pmanip->CalculateAngularVelocityJacobian(vjacobian);
+-            std::vector<npy_intp> dims(2); dims[0] = 3; dims[1] = _pmanip->GetArmIndices().size();
++            std::vector<size_t> dims(2); dims[0] = 3; dims[1] = _pmanip->GetArmIndices().size();
+             return toPyArray(vjacobian,dims);
+         }
+ 
+@@ -1139,7 +1141,7 @@ public:
+     object GetActiveDOFValues() const
+     {
+         if( _probot->GetActiveDOF() == 0 ) {
+-            return numeric::array(boost::python::list());
++            return numpy::array(boost::python::list());
+         }
+         vector<dReal> values;
+         _probot->GetActiveDOFValues(values);
+@@ -1149,7 +1151,7 @@ public:
+     object GetActiveDOFWeights() const
+     {
+         if( _probot->GetActiveDOF() == 0 ) {
+-            return numeric::array(boost::python::list());
++            return numpy::array(boost::python::list());
+         }
+         vector<dReal> weights;
+         _probot->GetActiveDOFWeights(weights);
+@@ -1163,7 +1165,7 @@ public:
+     object GetActiveDOFVelocities() const
+     {
+         if( _probot->GetActiveDOF() == 0 ) {
+-            return numeric::array(boost::python::list());
++            return numpy::array(boost::python::list());
+         }
+         vector<dReal> values;
+         _probot->GetActiveDOFVelocities(values);
+@@ -1173,7 +1175,7 @@ public:
+     object GetActiveDOFLimits() const
+     {
+         if( _probot->GetActiveDOF() == 0 ) {
+-            return boost::python::make_tuple(numeric::array(boost::python::list()), numeric::array(boost::python::list())); // always need 2 since users can do lower, upper = GetDOFLimits()
++            return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list())); // always need 2 since users can do lower, upper = GetDOFLimits()
+         }
+         vector<dReal> lower, upper;
+         _probot->GetActiveDOFLimits(lower,upper);
+@@ -1183,7 +1185,7 @@ public:
+     object GetActiveDOFMaxVel() const
+     {
+         if( _probot->GetActiveDOF() == 0 ) {
+-            return numeric::array(boost::python::list());
++            return numpy::array(boost::python::list());
+         }
+         vector<dReal> values;
+         _probot->GetActiveDOFMaxVel(values);
+@@ -1193,7 +1195,7 @@ public:
+     object GetActiveDOFMaxAccel() const
+     {
+         if( _probot->GetActiveDOF() == 0 ) {
+-            return numeric::array(boost::python::list());
++            return numpy::array(boost::python::list());
+         }
+         vector<dReal> values;
+         _probot->GetActiveDOFMaxAccel(values);
+@@ -1203,7 +1205,7 @@ public:
+     object GetActiveDOFResolutions() const
+     {
+         if( _probot->GetActiveDOF() == 0 ) {
+-            return numeric::array(boost::python::list());
++            return numpy::array(boost::python::list());
+         }
+         vector<dReal> values;
+         _probot->GetActiveDOFResolutions(values);
+@@ -1235,7 +1237,7 @@ public:
+     {
+         std::vector<dReal> vjacobian;
+         _probot->CalculateActiveJacobian(index,ExtractVector3(offset),vjacobian);
+-        std::vector<npy_intp> dims(2); dims[0] = 3; dims[1] = _probot->GetActiveDOF();
++        std::vector<size_t> dims(2); dims[0] = 3; dims[1] = _probot->GetActiveDOF();
+         return toPyArray(vjacobian,dims);
+     }
+ 
+@@ -1243,7 +1245,7 @@ public:
+     {
+         std::vector<dReal> vjacobian;
+         _probot->CalculateActiveRotationJacobian(index,ExtractVector4(q),vjacobian);
+-        std::vector<npy_intp> dims(2); dims[0] = 4; dims[1] = _probot->GetActiveDOF();
++        std::vector<size_t> dims(2); dims[0] = 4; dims[1] = _probot->GetActiveDOF();
+         return toPyArray(vjacobian,dims);
+     }
+ 
+@@ -1251,7 +1253,7 @@ public:
+     {
+         std::vector<dReal> vjacobian;
+         _probot->CalculateActiveAngularVelocityJacobian(index,vjacobian);
+-        std::vector<npy_intp> dims(2); dims[0] = 3; dims[1] = _probot->GetActiveDOF();
++        std::vector<size_t> dims(2); dims[0] = 3; dims[1] = _probot->GetActiveDOF();
+         return toPyArray(vjacobian,dims);
+     }
+ 
+diff --git a/python/bindings/openravepy_sensor.cpp b/python/bindings/openravepy_sensor.cpp
+index 4b48e9f2..1f6003b3 100644
+--- a/python/bindings/openravepy_sensor.cpp
++++ b/python/bindings/openravepy_sensor.cpp
+@@ -24,8 +24,8 @@ class PyCameraIntrinsics
+ public:
+     PyCameraIntrinsics(const geometry::RaveCameraIntrinsics<float>& intrinsics = geometry::RaveCameraIntrinsics<float>())
+     {
+-        numeric::array arr(boost::python::make_tuple(intrinsics.fx,0,intrinsics.cx,0,intrinsics.fy,intrinsics.cy,0,0,1));
+-        arr.resize(3,3);
++        numpy::ndarray arr = numpy::array(boost::python::make_tuple(intrinsics.fx,0,intrinsics.cx,0,intrinsics.fy,intrinsics.cy,0,0,1));
++        arr.reshape(boost::python::make_tuple(3,3));
+         K = arr;
+         distortion_model = intrinsics.distortion_model;
+         distortion_coeffs = toPyArray(intrinsics.distortion_coeffs);
+@@ -33,8 +33,8 @@ public:
+     }
+     PyCameraIntrinsics(const geometry::RaveCameraIntrinsics<double>& intrinsics)
+     {
+-        numeric::array arr(boost::python::make_tuple(intrinsics.fx,0,intrinsics.cx,0,intrinsics.fy,intrinsics.cy,0,0,1));
+-        arr.resize(3,3);
++        numpy::ndarray arr = numpy::array(boost::python::make_tuple(intrinsics.fx,0,intrinsics.cx,0,intrinsics.fy,intrinsics.cy,0,0,1));
++        arr.reshape(boost::python::make_tuple(3,3));
+         K = arr;
+         distortion_model = intrinsics.distortion_model;
+         distortion_coeffs = toPyArray(intrinsics.distortion_coeffs);
+@@ -370,25 +370,22 @@ public:
+                 throw openrave_exception(_("bad image data"));
+             }
+             {
+-                npy_intp dims[] = { pgeom->height,pgeom->width,3};
+-                PyObject *pyvalues = PyArray_SimpleNew(3,dims, PyArray_UINT8);
++                numpy::ndarray pyvalues = numpy::empty(boost::python::make_tuple(pgeom->height, pgeom->width, 3), numpy::dtype::get_builtin<uint8_t>());
+                 if( pdata->vimagedata.size() > 0 ) {
+-                    memcpy(PyArray_DATA(pyvalues),&pdata->vimagedata[0],pdata->vimagedata.size());
++                    memcpy(pyvalues.get_data(), &pdata->vimagedata[0],pdata->vimagedata.size());
+                 }
+-                imagedata = static_cast<numeric::array>(handle<>(pyvalues));
++                imagedata = pyvalues;
+             }
+         }
+         PyCameraSensorData(boost::shared_ptr<SensorBase::CameraGeomData const> pgeom) : PySensorData(SensorBase::ST_Camera), intrinsics(pgeom->intrinsics)
+         {
+             {
+-                npy_intp dims[] = { pgeom->height,pgeom->width,3};
+-                PyObject *pyvalues = PyArray_SimpleNew(3,dims, PyArray_UINT8);
+-                memset(PyArray_DATA(pyvalues),0,pgeom->height*pgeom->width*3);
+-                imagedata = static_cast<numeric::array>(handle<>(pyvalues));
++                numpy::ndarray pyvalues = numpy::zeros(boost::python::make_tuple(pgeom->height, pgeom->width, 3), numpy::dtype::get_builtin<uint8_t>());
++                imagedata = pyvalues;
+             }
+             {
+-                numeric::array arr(boost::python::make_tuple(pgeom->intrinsics.fx,0,pgeom->intrinsics.cx,0,pgeom->intrinsics.fy,pgeom->intrinsics.cy,0,0,1));
+-                arr.resize(3,3);
++                numpy::ndarray arr = numpy::array(boost::python::make_tuple(pgeom->intrinsics.fx,0,pgeom->intrinsics.cx,0,pgeom->intrinsics.fy,pgeom->intrinsics.cy,0,0,1));
++                arr.reshape(boost::python::make_tuple(3, 3));
+                 KK = arr;
+             }
+         }
+@@ -441,14 +438,14 @@ public:
+             rotation = toPyVector4(pdata->rotation);
+             angular_velocity = toPyVector3(pdata->angular_velocity);
+             linear_acceleration = toPyVector3(pdata->linear_acceleration);
+-            numeric::array arr = toPyArrayN(&pdata->rotation_covariance[0],pdata->rotation_covariance.size());
+-            arr.resize(3,3);
++            numpy::ndarray arr = toPyArrayN(&pdata->rotation_covariance[0],pdata->rotation_covariance.size());
++            arr.reshape(boost::python::make_tuple(3, 3));
+             rotation_covariance = arr;
+             arr = toPyArrayN(&pdata->angular_velocity_covariance[0],pdata->angular_velocity_covariance.size());
+-            arr.resize(3,3);
++            arr.reshape(boost::python::make_tuple(3, 3));
+             angular_velocity_covariance = arr;
+             arr = toPyArrayN(&pdata->linear_acceleration_covariance[0],pdata->linear_acceleration_covariance.size());
+-            arr.resize(3,3);
++            arr.reshape(boost::python::make_tuple(3, 3));
+             linear_acceleration_covariance = arr;
+         }
+         PyIMUSensorData(boost::shared_ptr<SensorBase::IMUGeomData const> pgeom) : PySensorData(SensorBase::ST_IMU)
+@@ -467,11 +464,11 @@ public:
+             pose = toPyArray(pdata->pose);
+             linear_velocity = toPyVector3(pdata->linear_velocity);
+             angular_velocity = toPyVector3(pdata->angular_velocity);
+-            numeric::array arr = toPyArrayN(&pdata->pose_covariance[0],pdata->pose_covariance.size());
+-            arr.resize(3,3);
++            numpy::ndarray arr = toPyArrayN(&pdata->pose_covariance[0],pdata->pose_covariance.size());
++            arr.reshape(boost::python::make_tuple(3, 3));
+             pose_covariance = arr;
+             arr = toPyArrayN(&pdata->velocity_covariance[0],pdata->velocity_covariance.size());
+-            arr.resize(3,3);
++            arr.reshape(boost::python::make_tuple(3, 3));
+             velocity_covariance = arr;
+             targetid = pgeom->targetid;
+ 
+@@ -492,8 +489,8 @@ public:
+         PyTactileSensorData(boost::shared_ptr<SensorBase::TactileGeomData const> pgeom, boost::shared_ptr<SensorBase::TactileSensorData> pdata) : PySensorData(pdata)
+         {
+             forces = toPyArray3(pdata->forces);
+-            numeric::array arr = toPyArrayN(&pdata->force_covariance[0],pdata->force_covariance.size());
+-            arr.resize(3,3);
++            numpy::ndarray arr = toPyArrayN(&pdata->force_covariance[0],pdata->force_covariance.size());
++            arr.reshape(boost::python::make_tuple(3, 3));
+             force_covariance = arr;
+             positions = toPyArray3(pgeom->positions);
+             thickness = pgeom->thickness;
+diff --git a/python/bindings/openravepy_spacesampler.cpp b/python/bindings/openravepy_spacesampler.cpp
+index e6b2fb3f..c66b3ac8 100644
+--- a/python/bindings/openravepy_spacesampler.cpp
++++ b/python/bindings/openravepy_spacesampler.cpp
+@@ -138,25 +138,23 @@ protected:
+     object _ReturnSamples2D(const std::vector<dReal>&samples)
+     {
+         if( samples.size() == 0 ) {
+-            return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("f8"));
++            return numpy::array(boost::python::list());
+         }
+         int dim = _pspacesampler->GetNumberOfValues();
+-        npy_intp dims[] = { npy_intp(samples.size()/dim), npy_intp(dim) };
+-        PyObject *pyvalues = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-        memcpy(PyArray_DATA(pyvalues),&samples.at(0),samples.size()*sizeof(samples[0]));
+-        return static_cast<numeric::array>(handle<>(pyvalues));
++        numpy::ndarray pyvalues = numpy::empty(boost::python::make_tuple( int(samples.size()/dim), dim ), numpy::dtype::get_builtin<dReal>());
++        memcpy(pyvalues.get_data(),&samples.at(0),samples.size()*sizeof(samples[0]));
++        return std::move(pyvalues);
+     }
+ 
+     object _ReturnSamples2D(const std::vector<uint32_t>&samples)
+     {
+         if( samples.size() == 0 ) {
+-            return static_cast<numeric::array>(numeric::array(boost::python::list()).astype("u4"));
++            return numpy::array(boost::python::list());
+         }
+         int dim = _pspacesampler->GetNumberOfValues();
+-        npy_intp dims[] = { npy_intp(samples.size()/dim), npy_intp(dim) };
+-        PyObject *pyvalues = PyArray_SimpleNew(2,dims, PyArray_UINT32);
+-        memcpy(PyArray_DATA(pyvalues),&samples.at(0),samples.size()*sizeof(samples[0]));
+-        return static_cast<numeric::array>(handle<>(pyvalues));
++        numpy::ndarray pyvalues = numpy::empty(boost::python::make_tuple( int(samples.size()/dim), dim ), numpy::dtype::get_builtin<uint32_t>());
++        memcpy(pyvalues.get_data(),&samples.at(0),samples.size()*sizeof(samples[0]));
++        return std::move(pyvalues);
+     }
+ };
+ 
+diff --git a/python/bindings/openravepy_trajectory.cpp b/python/bindings/openravepy_trajectory.cpp
+index 7620246d..32b7ec71 100644
+--- a/python/bindings/openravepy_trajectory.cpp
++++ b/python/bindings/openravepy_trajectory.cpp
+@@ -90,12 +90,11 @@ public:
+         _ptrajectory->SamplePoints(values,vtimes);
+ 
+         int numdof = _ptrajectory->GetConfigurationSpecification().GetDOF();
+-        npy_intp dims[] = { npy_intp(values.size()/numdof), npy_intp(numdof) };
+-        PyObject *pypos = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
++        numpy::ndarray pypos = numpy::empty(boost::python::make_tuple(int(values.size()/numdof), numdof), numpy::dtype::get_builtin<dReal>());
+         if( values.size() > 0 ) {
+-            memcpy(PyArray_DATA(pypos), &values[0], values.size()*sizeof(values[0]));
++            memcpy(pypos.get_data(), &values[0], values.size()*sizeof(values[0]));
+         }
+-        return static_cast<numeric::array>(handle<>(pypos));
++        return std::move(pypos);
+     }
+ 
+     object SamplePoints2D(object otimes, PyConfigurationSpecificationPtr pyspec) const
+@@ -105,12 +104,11 @@ public:
+         std::vector<dReal> vtimes = ExtractArray<dReal>(otimes);
+         _ptrajectory->SamplePoints(values, vtimes, spec);
+ 
+-        npy_intp dims[] = { npy_intp(values.size()/spec.GetDOF()), npy_intp(spec.GetDOF()) };
+-        PyObject *pypos = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
++        numpy::ndarray pypos = numpy::empty(boost::python::make_tuple(int(values.size()/spec.GetDOF()), int(spec.GetDOF())), numpy::dtype::get_builtin<dReal>());
+         if( values.size() > 0 ) {
+-            memcpy(PyArray_DATA(pypos), &values[0], values.size()*sizeof(values[0]));
++            memcpy(pypos.get_data(), &values[0], values.size()*sizeof(values[0]));
+         }
+-        return static_cast<numeric::array>(handle<>(pypos));
++        return std::move(pypos);
+     }
+ 
+     object GetConfigurationSpecification() const {
+@@ -141,12 +139,11 @@ public:
+         vector<dReal> values;
+         _ptrajectory->GetWaypoints(startindex,endindex,values);
+         int numdof = _ptrajectory->GetConfigurationSpecification().GetDOF();
+-        npy_intp dims[] = { npy_intp(values.size()/numdof), npy_intp(numdof) };
+-        PyObject *pypos = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
++        numpy::ndarray pypos = numpy::empty(boost::python::make_tuple( int(values.size()/numdof), int(numdof) ), numpy::dtype::get_builtin<dReal>());
+         if( values.size() > 0 ) {
+-            memcpy(PyArray_DATA(pypos), &values[0], values.size()*sizeof(values[0]));
++            memcpy(pypos.get_data(), &values[0], values.size()*sizeof(values[0]));
+         }
+-        return static_cast<numeric::array>(handle<>(pypos));
++        return std::move(pypos);
+     }
+ 
+     object GetAllWaypoints2D() const
+@@ -159,12 +156,11 @@ public:
+         vector<dReal> values;
+         ConfigurationSpecification spec = openravepy::GetConfigurationSpecification(pyspec);
+         _ptrajectory->GetWaypoints(startindex,endindex,values,spec);
+-        npy_intp dims[] = { npy_intp(values.size()/spec.GetDOF()), npy_intp(spec.GetDOF()) };
+-        PyObject *pypos = PyArray_SimpleNew(2,dims, sizeof(dReal)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
++        numpy::ndarray pypos = numpy::empty(boost::python::make_tuple( int(values.size()/spec.GetDOF()), int(spec.GetDOF()) ), numpy::dtype::get_builtin<dReal>());
+         if( values.size() > 0 ) {
+-            memcpy(PyArray_DATA(pypos), &values[0], values.size()*sizeof(values[0]));
++            memcpy(pypos.get_data(), &values[0], values.size()*sizeof(values[0]));
+         }
+-        return static_cast<numeric::array>(handle<>(pypos));
++        return std::move(pypos);
+     }
+ 
+     object GetAllWaypoints2D(PyConfigurationSpecificationPtr pyspec) const
+diff --git a/python/bindings/openravepy_viewer.cpp b/python/bindings/openravepy_viewer.cpp
+index d8f44481..c75198a5 100644
+--- a/python/bindings/openravepy_viewer.cpp
++++ b/python/bindings/openravepy_viewer.cpp
+@@ -286,7 +286,7 @@ public:
+         if( !_pviewer->GetCameraImage(memory, width,height,RaveTransform<float>(ExtractTransform(extrinsic)), KK) ) {
+             throw openrave_exception(_("failed to get camera image"));
+         }
+-        std::vector<npy_intp> dims(3); dims[0] = height; dims[1] = width; dims[2] = 3;
++        std::vector<size_t> dims(3); dims[0] = height; dims[1] = width; dims[2] = 3;
+         return toPyArray(memory,dims);
+     }
+ 
+diff --git a/python/bindings/pyann.cpp b/python/bindings/pyann.cpp
+index eef4b08f..231bfcbc 100644
+--- a/python/bindings/pyann.cpp
++++ b/python/bindings/pyann.cpp
+@@ -20,12 +20,12 @@
+ #include <boost/python/exception_translator.hpp>
+ #include <boost/python/stl_iterator.hpp>
+ #include <pyconfig.h>
+-#include <numpy/arrayobject.h>
+ 
+ #include <exception>
+ #include <boost/shared_ptr.hpp>
+ #include <boost/format.hpp>
+ #include <boost/assert.hpp>
++#include <boost/python/numpy.hpp>
+ 
+ #define OPENRAVE_BININGS_PYARRAY
+ #include "bindings.h"
+@@ -117,15 +117,13 @@ object search(ANNkd_tree& kdtree, object q, int k, double eps, bool priority = f
+     for (int c = 0; c < kdtree.theDim(); ++c)
+         annq.pt[c] = extract<ANNcoord>(q[c]);
+ 
+-    npy_intp dims[] = { k};
+-    PyObject *pydists = PyArray_SimpleNew(1,dims, sizeof(ANNdist)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
++    boost::python::tuple shape = boost::python::make_tuple(k);
++    numpy::ndarray pydists = numpy::empty(shape, numpy::dtype::get_builtin<ANNdist>());
+     BOOST_ASSERT(!!pydists);
+-    PyObject *pyidx = PyArray_SimpleNew(1,dims, PyArray_INT);
+-    if( !pyidx )
+-        Py_DECREF(pydists);
++    numpy::ndarray pyidx = numpy::empty(shape, numpy::dtype::get_builtin<int>());
+     BOOST_ASSERT(!!pyidx);
+-    ANNdist* pdists = (ANNdist*)PyArray_DATA(pydists);
+-    ANNidx* pidx = (ANNidx*)PyArray_DATA(pyidx);
++    ANNdist* pdists = (ANNdist*) pydists.get_data();
++    ANNidx* pidx = (ANNidx*) pyidx.get_data();
+ 
+     std::vector<ANNidx> nn_idx(k);
+     std::vector<ANNdist> dists(k);
+@@ -134,7 +132,7 @@ object search(ANNkd_tree& kdtree, object q, int k, double eps, bool priority = f
+         kdtree.annkPriSearch(annq.pt, k, pidx, pdists, eps);
+     else
+         kdtree.annkSearch(annq.pt, k, pidx, pdists, eps);
+-    return boost::python::make_tuple(static_cast<numeric::array>(handle<>(pyidx)), static_cast<numeric::array>(handle<>(pydists)));
++    return boost::python::make_tuple(pyidx, pydists);
+ }
+ 
+ object search_array(ANNkd_tree& kdtree, object qarray, int k, double eps, bool priority = false)
+@@ -142,20 +140,17 @@ object search_array(ANNkd_tree& kdtree, object qarray, int k, double eps, bool p
+     BOOST_ASSERT(k <= kdtree.nPoints());
+     int N = len(qarray);
+     if( N == 0 )
+-        return boost::python::make_tuple(numeric::array(boost::python::list()).astype("i4"),numeric::array(boost::python::list()));
++        return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list()));
+ 
+     BOOST_ASSERT(len(qarray[0])==kdtree.theDim());
+     ANNpointManaged annq(kdtree.theDim());
+-    npy_intp dims[] = { N,k};
+-    PyObject *pydists = PyArray_SimpleNew(2,dims, sizeof(ANNdist)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
++    boost::python::tuple shape = boost::python::make_tuple(N, k);
++    numpy::ndarray pydists = numpy::empty(shape, numpy::dtype::get_builtin<ANNdist>());
+     BOOST_ASSERT(!!pydists);
+-    PyObject *pyidx = PyArray_SimpleNew(2,dims, PyArray_INT);
+-    if( !pyidx ) {
+-        Py_DECREF(pydists);
+-    }
++    numpy::ndarray pyidx = numpy::empty(shape, numpy::dtype::get_builtin<int>());
+     BOOST_ASSERT(!!pyidx);
+-    ANNdist* pdists = (ANNdist*)PyArray_DATA(pydists);
+-    ANNidx* pidx = (ANNidx*)PyArray_DATA(pyidx);
++    ANNdist* pdists = (ANNdist*) pydists.get_data();
++    ANNidx* pidx = (ANNidx*) pyidx.get_data();
+ 
+     std::vector<ANNdist> dists(k);
+     std::vector<ANNidx> nn_idx(k);
+@@ -172,7 +167,7 @@ object search_array(ANNkd_tree& kdtree, object qarray, int k, double eps, bool p
+         std::copy(dists.begin(),dists.end(),pdists); pdists += k;
+     }
+ 
+-    return boost::python::make_tuple(static_cast<numeric::array>(handle<>(pyidx)), static_cast<numeric::array>(handle<>(pydists)));
++    return boost::python::make_tuple(pyidx, pydists);
+ }
+ 
+ object k_fixed_radius_search(ANNkd_tree& kdtree, object q, double sqRad, int k, double eps)
+@@ -184,24 +179,22 @@ object k_fixed_radius_search(ANNkd_tree& kdtree, object q, double sqRad, int k,
+ 
+     if( k <= 0 ) {
+         int kball = kdtree.annkFRSearch(annq.pt, sqRad, k, NULL, NULL, eps);
+-        return boost::python::make_tuple(numeric::array(boost::python::list()).astype("i4"),numeric::array(boost::python::list()),kball);
++        return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list()), kball);
+     }
+ 
+     std::vector<ANNdist> dists(k);
+     std::vector<ANNidx> nn_idx(k);
+     int kball = kdtree.annkFRSearch(annq.pt, sqRad, k, &nn_idx[0], &dists[0], eps);
+     if( kball <= 0 )
+-        return boost::python::make_tuple(numeric::array(boost::python::list()).astype("i4"),numeric::array(boost::python::list()),kball);
++        return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list()), kball);
+ 
+-    npy_intp dims[] = { min(k,kball)};
+-    PyObject *pydists = PyArray_SimpleNew(1,dims, sizeof(ANNdist)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
++    boost::python::tuple shape = boost::python::make_tuple(min(k, kball));
++    numpy::ndarray pydists = numpy::empty(shape, numpy::dtype::get_builtin<ANNdist>());
+     BOOST_ASSERT(!!pydists);
+-    PyObject *pyidx = PyArray_SimpleNew(1,dims, PyArray_INT);
+-    if( !pyidx )
+-        Py_DECREF(pydists);
++    numpy::ndarray pyidx = numpy::empty(shape, numpy::dtype::get_builtin<int>());
+     BOOST_ASSERT(!!pyidx);
+-    ANNdist* pdists = (ANNdist*)PyArray_DATA(pydists);
+-    ANNidx* pidx = (ANNidx*)PyArray_DATA(pyidx);
++    ANNdist* pdists = (ANNdist*) pydists.get_data();
++    ANNidx* pidx = (ANNidx*) pyidx.get_data();
+     int addindex=0;
+     for (int i = 0; i < k; ++i) {
+         if (nn_idx[i] != ANN_NULL_IDX) {
+@@ -212,7 +205,7 @@ object k_fixed_radius_search(ANNkd_tree& kdtree, object q, double sqRad, int k,
+     }
+ 
+     BOOST_ASSERT(kball > k || addindex==kball);
+-    return boost::python::make_tuple(static_cast<numeric::array>(handle<>(pyidx)), static_cast<numeric::array>(handle<>(pydists)),kball);
++    return boost::python::make_tuple(pyidx, pydists, kball);
+ }
+ 
+ object k_fixed_radius_search_array(ANNkd_tree& kdtree, object qarray, double sqRad, int k, double eps)
+@@ -220,14 +213,14 @@ object k_fixed_radius_search_array(ANNkd_tree& kdtree, object qarray, double sqR
+     BOOST_ASSERT(k <= kdtree.nPoints());
+     int N = len(qarray);
+     if( N == 0 )
+-        return boost::python::make_tuple(numeric::array(boost::python::list()).astype("i4"),numeric::array(boost::python::list()),numeric::array(boost::python::list()));
++        return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list()), numpy::array(boost::python::list()));
+ 
+     BOOST_ASSERT(len(qarray[0])==kdtree.theDim());
+     ANNpointManaged annq(kdtree.theDim());
+-    npy_intp dimsball[] = { N};
+-    PyObject *pykball = PyArray_SimpleNew(1,dimsball, PyArray_INT);
++    boost::python::tuple shape_ball = boost::python::make_tuple(N);
++    numpy::ndarray pykball = numpy::empty(shape_ball, numpy::dtype::get_builtin<int>());
+     BOOST_ASSERT(!!pykball);
+-    int* pkball = (int*)PyArray_DATA(pykball);
++    int* pkball = (int*) pykball.get_data();
+ 
+     if( k <= 0 ) {
+         for(int i = 0; i < N; ++i) {
+@@ -236,22 +229,17 @@ object k_fixed_radius_search_array(ANNkd_tree& kdtree, object qarray, double sqR
+                 annq.pt[c] = extract<ANNcoord>(q[c]);
+             pkball[i] = kdtree.annkFRSearch(annq.pt, sqRad, k, NULL, NULL, eps);
+         }
+-        return boost::python::make_tuple(numeric::array(boost::python::list()).astype("i4"),numeric::array(boost::python::list()),static_cast<numeric::array>(handle<>(pykball)));
++        return boost::python::make_tuple(numpy::array(boost::python::list()), numpy::array(boost::python::list()), pykball);
+     }
+ 
+-    npy_intp dims[] = { N,k};
+-    PyObject *pydists = PyArray_SimpleNew(2,dims, sizeof(ANNdist)==8 ? PyArray_DOUBLE : PyArray_FLOAT);
+-    if( !pydists )
+-        Py_DECREF(pykball);
++    boost::python::tuple shape = boost::python::make_tuple(N, k);
++
++    numpy::ndarray pydists = numpy::empty(shape, numpy::dtype::get_builtin<ANNdist>());
+     BOOST_ASSERT(!!pydists);
+-    PyObject *pyidx = PyArray_SimpleNew(2,dims, PyArray_INT);
+-    if( !pyidx ) {
+-        Py_DECREF(pykball);
+-        Py_DECREF(pydists);
+-    }
++    numpy::ndarray pyidx = numpy::empty(shape, numpy::dtype::get_builtin<int>());
+     BOOST_ASSERT(!!pyidx);
+-    ANNdist* pdists = (ANNdist*)PyArray_DATA(pydists);
+-    ANNidx* pidx = (ANNidx*)PyArray_DATA(pyidx);
++    ANNdist* pdists = (ANNdist*) pydists.get_data();
++    ANNidx* pidx = (ANNidx*) pyidx.get_data();
+ 
+     std::vector<ANNdist> dists(k);
+     std::vector<ANNidx> nn_idx(k);
+@@ -265,7 +253,7 @@ object k_fixed_radius_search_array(ANNkd_tree& kdtree, object qarray, double sqR
+         std::copy(dists.begin(),dists.end(),pdists); pdists += k;
+     }
+ 
+-    return boost::python::make_tuple(static_cast<numeric::array>(handle<>(pyidx)), static_cast<numeric::array>(handle<>(pydists)),static_cast<numeric::array>(handle<>(pykball)));
++    return boost::python::make_tuple(pyidx, pydists, pykball);
+ }
+ 
+ object ksearch(ANNkd_tree& kdtree, object q, int k, double eps)
+@@ -290,8 +278,8 @@ object k_priority_search_array(ANNkd_tree& kdtree, object q, int k, double eps)
+ 
+ BOOST_PYTHON_MODULE(pyANN_int)
+ {
+-    import_array();
+-    numeric::array::set_module_and_type("numpy", "ndarray");
++    Py_Initialize();
++    numpy::initialize();
+     int_from_int();
+     T_from_number<float>();
+     T_from_number<double>();

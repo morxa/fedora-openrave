@@ -8,7 +8,7 @@
 
 Name:           openrave
 Version:        0.9.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Open Robotics Automation Virtual Environment
 
 License:        LGPLv3+ and ASL 2.0 and BSD
@@ -30,10 +30,10 @@ Patch1:         openrave.fix-abs-paths.patch
 # Pull request: https://github.com/rdiankov/openrave/pull/407
 Patch2:         openrave.ikfast.patch
 Patch3:         openrave.min-template-deduction.patch
-# Patch from https://github.com/rdiankov/openrave/commit/401e3145577b0c4811dd01ddf848b496bea51ce6.patch
-Patch4:         openrave.gcc7.patch
 # Workaround for https://github.com/rdiankov/openrave/issues/354
 Patch5:         openrave.remove-spinloop.patch
+# Update python bindings to work with boost-1.6x
+Patch6:         openrave.boost-1.6x.patch
 
 # models are in a separate noarch package
 Requires:       %{name}-models = %{version}-%{release}
@@ -150,7 +150,7 @@ rm -rf 3rdparty/{ann,collada-*,crlibm-*,fparser-*,flann-*,minizip,pcre-*,qhull,z
 
 %build
 
-mkdir build
+mkdir -p build
 pushd build
 
 # only add shlib dependency if it is actually used
@@ -229,6 +229,7 @@ for file in $(grep -rIl "^#\!.*python" %{buildroot}/%{_bindir}) ; do
 done
 
 # remove shebangs from site packages
+# TODO fixme
 for file in $(grep -rIl "^#\!.*python" %{buildroot}/%{python2_sitearch}) ; do
   sed -i.orig "0,/^#\!.*python.*/ d" $file
   touch -r $file.orig $file
@@ -306,6 +307,10 @@ export OCTAVE_PATH=%{buildroot}/%{_libdir}/octave/packages/openrave-%{version}
 %{python2_sitearch}/*
 
 %changelog
+* Sun Dec 16 2018 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-5
+- Add patch to fix builds with boost-1.6x
+- Remove gcc7 patch (included in boost patch)
+
 * Fri Oct 27 2017 Till Hofmann <thofmann@fedoraproject.org> - 0.9.0-4
 - Remove shebang from python site-packages
 
